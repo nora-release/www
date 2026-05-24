@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import {
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Download as DownloadIcon,
-  Feather,
-  Menu,
-  MessageCircle,
-  MonitorDown,
-  ShieldCheck,
-  Sparkles,
-  X,
-} from '@lucide/vue'
+  downloadHref,
+  faqs,
+  features,
+  footerLinks,
+  navItems,
+  workModes,
+} from './data/home'
 
 useHead({
   htmlAttrs: {
@@ -54,296 +48,23 @@ useHead({
   ],
 })
 
-const isMenuOpen = ref(false)
-const downloadHref = '/api/download?platform=macos'
-
-const navItems = [
-  { label: 'Features', href: '#features' },
-  { label: 'Download', href: '#download' },
-  { label: 'FAQ', href: '#faq' },
-]
-
-const workModes = [
-  {
-    title: 'Track work without switching context.',
-    text: 'Active, waiting, and finished runs stay visible.',
-  },
-  {
-    title: 'Let agents operate the computer.',
-    text: 'Only after you allow it.',
-  },
-  {
-    title: 'Inspect changes first.',
-    text: 'Accept selected files or discard the run.',
-  },
-]
-
-const features = [
-  {
-    icon: MessageCircle,
-    title: 'Local sessions',
-    text: 'One conversation, one local agent loop.',
-  },
-  {
-    icon: MonitorDown,
-    title: 'Computer use',
-    text: 'Operate Mac apps only when you allow it.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Sandbox review',
-    text: 'Accept only the changes you want.',
-  },
-]
-
-const faqs = [
-  {
-    question: 'What is Nora?',
-    answer:
-      'Nora is a macOS-first local agent chat app for running coding and productivity agents on your own machine.',
-  },
-  {
-    question: 'Is Nora local-first?',
-    answer:
-      'Yes. Provider credentials, agent state, skills, schedules, and sandbox workflows are managed locally by the desktop app.',
-  },
-  {
-    question: 'Which model providers does it support?',
-    answer:
-      'It works with OAuth, API-key, subscription, gateway, and OpenAI-compatible routes, including OpenAI, Anthropic, Google Gemini, Bedrock, Azure, Cloudflare, Cerebras, and custom endpoints.',
-  },
-  {
-    question: 'How are file changes reviewed?',
-    answer:
-      'Agent edits happen in a sandbox first. You can inspect proposed changes, accept selected files, accept all, or discard the run before anything touches the host filesystem.',
-  },
-  {
-    question: 'What are skills?',
-    answer:
-      'Skills are local capability packages with a SKILL.md entry point. Nora advertises active skills to the agent and loads the relevant instructions only when a task needs them.',
-  },
-]
-
-const closeMenu = () => {
-  isMenuOpen.value = false
-}
 </script>
 
 <template>
   <div class="home-page">
     <NuxtRouteAnnouncer />
 
-    <header class="nav-wrap">
-      <nav class="site-nav" aria-label="Primary navigation">
-        <a class="brand" href="#top" aria-label="Nora home" @click="closeMenu">
-          <span class="brand-mark" aria-hidden="true">
-            <img src="/default/icon_128x128.png" alt="" width="42" height="42">
-          </span>
-          <span>Nora</span>
-        </a>
-
-        <div class="nav-links" aria-label="Main sections">
-          <a v-for="item in navItems" :key="item.href" :href="item.href">
-            {{ item.label }}
-          </a>
-        </div>
-
-        <a class="nav-cta" :href="downloadHref">
-          Download app
-          <DownloadIcon :size="17" aria-hidden="true" />
-        </a>
-
-        <button
-          class="menu-button"
-          type="button"
-          aria-label="Toggle navigation menu"
-          :aria-expanded="isMenuOpen"
-          aria-controls="mobile-menu"
-          @click="isMenuOpen = !isMenuOpen"
-        >
-          <Menu v-if="!isMenuOpen" :size="22" aria-hidden="true" />
-          <X v-else :size="22" aria-hidden="true" />
-        </button>
-      </nav>
-
-      <div v-if="isMenuOpen" id="mobile-menu" class="mobile-panel">
-        <a
-          v-for="item in navItems"
-          :key="item.href"
-          :href="item.href"
-          @click="closeMenu"
-        >
-          {{ item.label }}
-        </a>
-        <a
-          class="mobile-cta"
-          :href="downloadHref"
-          @click="closeMenu"
-        >
-          Download app
-          <DownloadIcon :size="17" aria-hidden="true" />
-        </a>
-      </div>
-    </header>
+    <AppHeader :nav-items="navItems" :download-href="downloadHref" />
 
     <main id="top">
-      <section class="hero section-shell" aria-labelledby="hero-title">
-        <div class="ambient ambient-moss" aria-hidden="true" />
-        <div class="ambient ambient-clay" aria-hidden="true" />
-
-        <div class="hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">
-              <Feather :size="18" aria-hidden="true" />
-              One desktop home for every AI provider
-            </p>
-
-            <h1 id="hero-title">Nora unifies your AI experience.</h1>
-
-            <p class="hero-text">
-              A beautiful desktop application for OpenAI, Anthropic, Google
-              Gemini, and custom providers. Switch models without breaking your
-              flow.
-            </p>
-
-            <div class="hero-actions" aria-label="Hero actions">
-              <a
-                class="button button-primary"
-                :href="downloadHref"
-              >
-                Download Nora
-                <DownloadIcon :size="20" aria-hidden="true" />
-              </a>
-              <a class="button button-outline" href="#features">See features</a>
-            </div>
-          </div>
-
-          <div class="hero-visual" aria-label="Nora AI desktop workspace preview">
-            <div class="release-board">
-              <div class="board-header">
-                <span class="board-kicker">AI workspace</span>
-                <span class="board-status">Desktop</span>
-              </div>
-
-              <div class="release-title">
-                <Sparkles :size="24" aria-hidden="true" />
-                <span>One conversation, every model</span>
-              </div>
-
-              <div class="source-row">
-                <span>OpenAI</span>
-                <span>Anthropic</span>
-                <span>Gemini</span>
-                <span>Custom</span>
-              </div>
-
-              <div class="story-card story-card-primary">
-                <span class="story-label">Active provider</span>
-                <p>
-                  Compare answers across providers, keep the same context, and
-                  continue from one focused desktop workspace.
-                </p>
-              </div>
-
-              <div class="story-grid">
-                <div class="mini-note">
-                  <Check :size="18" aria-hidden="true" />
-                  Local history
-                </div>
-                <div class="mini-note mini-note-clay">
-                  <Check :size="18" aria-hidden="true" />
-                  Custom keys
-                </div>
-              </div>
-            </div>
-
-            <div class="floating-note floating-note-right">
-              <MessageCircle :size="19" aria-hidden="true" />
-              Model switch
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="work-section" aria-label="Nora work controls">
-        <div class="work-grid">
-          <article v-for="mode in workModes" :key="mode.title" class="work-card">
-            <h2>{{ mode.title }}</h2>
-            <p>{{ mode.text }}</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="features" class="features section-shell" aria-labelledby="features-title">
-        <div class="section-heading">
-          <p class="eyebrow">A calmer way to use AI</p>
-          <h2 id="features-title">One beautiful app for all your models.</h2>
-        </div>
-
-        <div class="feature-grid">
-          <article
-            v-for="(feature, index) in features"
-            :key="feature.title"
-            class="feature-card"
-            :class="`feature-shape-${index + 1}`"
-          >
-            <div class="icon-bloom">
-              <component :is="feature.icon" :size="28" aria-hidden="true" />
-            </div>
-            <h3>{{ feature.title }}</h3>
-            <p>{{ feature.text }}</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="faq" class="faq section-shell" aria-labelledby="faq-title">
-        <div class="faq-copy">
-          <p class="eyebrow">Common questions</p>
-          <h2 id="faq-title">A few details before downloading.</h2>
-        </div>
-
-        <div class="faq-list">
-          <details v-for="item in faqs" :key="item.question" class="faq-item">
-            <summary>
-              <span>{{ item.question }}</span>
-              <ChevronDown :size="20" aria-hidden="true" />
-            </summary>
-            <p>{{ item.answer }}</p>
-          </details>
-        </div>
-      </section>
-
-      <section id="download" class="final-cta section-shell" aria-labelledby="download-title">
-        <div class="ambient ambient-cta" aria-hidden="true" />
-        <p class="eyebrow">Download the desktop app</p>
-        <h2 id="download-title">Bring every AI provider into one calm workspace.</h2>
-        <p>
-          Install Nora when you want OpenAI, Anthropic, Google Gemini, and
-          custom providers in a single desktop experience.
-        </p>
-        <a
-          class="button button-primary button-light"
-          :href="downloadHref"
-        >
-          Download app
-          <DownloadIcon :size="20" aria-hidden="true" />
-        </a>
-      </section>
+      <HeroSection :download-href="downloadHref" />
+      <WorkModesSection :modes="workModes" />
+      <FeaturesSection :features="features" />
+      <FaqSection :items="faqs" />
+      <DownloadSection :download-href="downloadHref" />
     </main>
 
-    <footer class="site-footer">
-      <a class="brand" href="#top" aria-label="Nora home">
-        <span class="brand-mark" aria-hidden="true">
-          <img src="/default/icon_128x128.png" alt="" width="42" height="42">
-        </span>
-        <span>Nora</span>
-      </a>
-      <p>A beautiful desktop application that unifies your AI experience.</p>
-      <div class="footer-links">
-        <a href="#features">Features</a>
-        <a href="#download">Download</a>
-      </div>
-    </footer>
+    <SiteFooter :links="footerLinks" />
   </div>
 </template>
 
