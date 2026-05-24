@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Download as DownloadIcon } from '@lucide/vue'
-
 defineProps<{
   downloadHref: string
 }>()
@@ -17,7 +15,7 @@ defineProps<{
     </p>
     <a class="button button-primary button-light" :href="downloadHref">
       Download app
-      <DownloadIcon :size="20" aria-hidden="true" />
+      <span class="i-lucide-download size-5" aria-hidden="true" />
     </a>
   </section>
 </template>

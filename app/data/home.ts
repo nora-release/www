@@ -1,10 +1,3 @@
-import type { Component } from 'vue'
-import {
-  MessageCircle,
-  MonitorDown,
-  ShieldCheck,
-} from '@lucide/vue'
-
 export type NavItem = {
   label: string
   href: string
@@ -16,7 +9,7 @@ export type WorkMode = {
 }
 
 export type FeatureItem = {
-  icon: Component
+  icon: string
   title: string
   text: string
 }
@@ -56,17 +49,17 @@ export const workModes: WorkMode[] = [
 
 export const features: FeatureItem[] = [
   {
-    icon: MessageCircle,
+    icon: 'i-lucide-message-circle',
     title: 'Local sessions',
     text: 'One conversation, one local agent loop.',
   },
   {
-    icon: MonitorDown,
+    icon: 'i-lucide-monitor-down',
     title: 'Computer use',
     text: 'Operate Mac apps only when you allow it.',
   },
   {
-    icon: ShieldCheck,
+    icon: 'i-lucide-shield-check',
     title: 'Sandbox review',
     text: 'Accept only the changes you want.',
   },

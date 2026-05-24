@@ -21,7 +21,7 @@ defineProps<{
         :class="`feature-shape-${index + 1}`"
       >
         <div class="icon-bloom">
-          <component :is="feature.icon" :size="28" aria-hidden="true" />
+          <span :class="[feature.icon, 'feature-icon']" aria-hidden="true" />
         </div>
         <h3>{{ feature.title }}</h3>
         <p>{{ feature.text }}</p>

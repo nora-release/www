@@ -1,10 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import {
-  Download as DownloadIcon,
-  Menu,
-  X,
-} from '@lucide/vue'
 import type { NavItem } from '../data/home'
 
 defineProps<{
@@ -32,7 +27,7 @@ const closeMenu = () => {
 
       <a class="nav-cta" :href="downloadHref">
         Download app
-        <DownloadIcon :size="17" aria-hidden="true" />
+        <span class="i-lucide-download size-[1.0625rem]" aria-hidden="true" />
       </a>
 
       <button
@@ -43,8 +38,16 @@ const closeMenu = () => {
         aria-controls="mobile-menu"
         @click="isMenuOpen = !isMenuOpen"
       >
-        <Menu v-if="!isMenuOpen" :size="22" aria-hidden="true" />
-        <X v-else :size="22" aria-hidden="true" />
+        <span
+          v-if="!isMenuOpen"
+          class="i-lucide-menu size-[1.375rem]"
+          aria-hidden="true"
+        />
+        <span
+          v-else
+          class="i-lucide-x size-[1.375rem]"
+          aria-hidden="true"
+        />
       </button>
     </nav>
 
@@ -63,7 +66,7 @@ const closeMenu = () => {
         @click="closeMenu"
       >
         Download app
-        <DownloadIcon :size="17" aria-hidden="true" />
+        <span class="i-lucide-download size-[1.0625rem]" aria-hidden="true" />
       </a>
     </div>
   </header>

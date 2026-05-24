@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     enabled: true 
   },
   modules: [
-    '@vueuse/nuxt'
+    '@vueuse/nuxt',
+    '@unocss/nuxt',
   ]
 })

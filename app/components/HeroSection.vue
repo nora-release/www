@@ -1,12 +1,4 @@
 <script setup lang="ts">
-import {
-  Check,
-  Download as DownloadIcon,
-  Feather,
-  MessageCircle,
-  Sparkles,
-} from '@lucide/vue'
-
 defineProps<{
   downloadHref: string
 }>()
@@ -20,7 +12,7 @@ defineProps<{
     <div class="hero-grid">
       <div class="hero-copy">
         <p class="eyebrow">
-          <Feather :size="18" aria-hidden="true" />
+          <span class="i-lucide-feather size-[1.125rem]" aria-hidden="true" />
           One desktop home for every AI provider
         </p>
 
@@ -35,7 +27,7 @@ defineProps<{
         <div class="hero-actions" aria-label="Hero actions">
           <a class="button button-primary" :href="downloadHref">
             Download Nora
-            <DownloadIcon :size="20" aria-hidden="true" />
+            <span class="i-lucide-download size-5" aria-hidden="true" />
           </a>
           <a class="button button-outline" href="#features">See features</a>
         </div>
@@ -49,7 +41,7 @@ defineProps<{
           </div>
 
           <div class="release-title">
-            <Sparkles :size="24" aria-hidden="true" />
+            <span class="i-lucide-sparkles size-6" aria-hidden="true" />
             <span>One conversation, every model</span>
           </div>
 
@@ -70,18 +62,18 @@ defineProps<{
 
           <div class="story-grid">
             <div class="mini-note">
-              <Check :size="18" aria-hidden="true" />
+              <span class="i-lucide-check size-[1.125rem]" aria-hidden="true" />
               Local history
             </div>
             <div class="mini-note mini-note-clay">
-              <Check :size="18" aria-hidden="true" />
+              <span class="i-lucide-check size-[1.125rem]" aria-hidden="true" />
               Custom keys
             </div>
           </div>
         </div>
 
         <div class="floating-note floating-note-right">
-          <MessageCircle :size="19" aria-hidden="true" />
+          <span class="i-lucide-message-circle size-[1.1875rem]" aria-hidden="true" />
           Model switch
         </div>
       </div>

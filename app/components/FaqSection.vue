@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ChevronDown } from '@lucide/vue'
 import type { FaqItem } from '../data/home'
 
 defineProps<{
@@ -18,7 +17,7 @@ defineProps<{
       <details v-for="item in items" :key="item.question" class="faq-item">
         <summary>
           <span>{{ item.question }}</span>
-          <ChevronDown :size="20" aria-hidden="true" />
+          <span class="i-lucide-chevron-down size-5" aria-hidden="true" />
         </summary>
         <p>{{ item.answer }}</p>
       </details>
