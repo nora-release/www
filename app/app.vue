@@ -55,7 +55,7 @@ useHead({
 })
 
 const isMenuOpen = ref(false)
-const downloadHref = '#download'
+const downloadHref = '/api/download?platform=macos'
 
 const navItems = [
   { label: 'Features', href: '#features' },
@@ -175,7 +175,11 @@ const closeMenu = () => {
         >
           {{ item.label }}
         </a>
-        <a class="mobile-cta" :href="downloadHref" @click="closeMenu">
+        <a
+          class="mobile-cta"
+          :href="downloadHref"
+          @click="closeMenu"
+        >
           Download app
           <DownloadIcon :size="17" aria-hidden="true" />
         </a>
@@ -203,7 +207,10 @@ const closeMenu = () => {
             </p>
 
             <div class="hero-actions" aria-label="Hero actions">
-              <a class="button button-primary" :href="downloadHref">
+              <a
+                class="button button-primary"
+                :href="downloadHref"
+              >
                 Download Nora
                 <DownloadIcon :size="20" aria-hidden="true" />
               </a>
@@ -314,7 +321,10 @@ const closeMenu = () => {
           Install Nora when you want OpenAI, Anthropic, Google Gemini, and
           custom providers in a single desktop experience.
         </p>
-        <a class="button button-primary button-light" :href="downloadHref">
+        <a
+          class="button button-primary button-light"
+          :href="downloadHref"
+        >
           Download app
           <DownloadIcon :size="20" aria-hidden="true" />
         </a>
