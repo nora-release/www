@@ -12,8 +12,10 @@ const focusRing =
 
 export default defineConfig({
   safelist: [
+    'i-lucide-arrow-left',
     'i-lucide-check',
     'i-lucide-chevron-down',
+    'i-lucide-chevron-up',
     'i-lucide-circle-alert',
     'i-lucide-download',
     'i-lucide-external-link',
@@ -25,14 +27,17 @@ export default defineConfig({
     'i-lucide-message-circle',
     'i-lucide-message-square',
     'i-lucide-monitor-down',
+    'i-lucide-pen-line',
     'i-lucide-plus',
     'i-lucide-refresh-cw',
+    'i-lucide-search',
     'i-lucide-send',
     'i-lucide-shield-check',
     'i-lucide-sparkles',
     'i-lucide-user-plus',
     'i-lucide-user-circle',
     'i-lucide-x',
+    'i-lucide-zap',
   ],
   presets: [
     presetWind4({

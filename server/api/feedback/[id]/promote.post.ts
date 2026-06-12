@@ -22,7 +22,7 @@ export default (event: any) => withApiResponse(event, async () => {
     throw feedbackError(400, 'Feedback id is required.')
   }
 
-  const item = await getFeedbackItem(event, id)
+  const item = await getFeedbackItem(event, id, user)
 
   if (item.issue) {
     return {

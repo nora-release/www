@@ -30,6 +30,7 @@ export const feedbackItems = pgTable(
     title: text('title').notNull(),
     description: text('description').notNull(),
     status: text('status').notNull(),
+    category: text('category').notNull().default('feature'),
     authorGithubId: bigint('author_github_id', { mode: 'number' })
       .notNull()
       .references(() => feedbackUsers.githubId),
@@ -38,6 +39,7 @@ export const feedbackItems = pgTable(
   },
   (table) => [
     index('feedback_items_updated_at_idx').on(table.updatedAt),
+    index('feedback_items_category_idx').on(table.category),
   ],
 )
 
@@ -68,3 +70,20 @@ export const githubIssues = pgTable('github_issues', {
   url: text('url').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 })
+
+export const feedbackVotes = pgTable(
+  'feedback_votes',
+  {
+    feedbackId: text('feedback_id')
+      .notNull()
+      .references(() => feedbackItems.id, { onDelete: 'cascade' }),
+    githubId: bigint('github_id', { mode: 'number' })
+      .notNull()
+      .references(() => feedbackUsers.githubId, { onDelete: 'cascade' }),
+    value: integer('value').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index('feedback_votes_feedback_id_idx').on(table.feedbackId),
+  ],
+)

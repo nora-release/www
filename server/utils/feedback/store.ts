@@ -1,9 +1,11 @@
 import { randomBytes } from 'node:crypto'
-import { asc, desc, eq, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, schema } from '@nuxthub/db'
 import { feedbackError } from './http'
 import type {
   FeedbackAuthor,
+  FeedbackCategory,
+  FeedbackContributor,
   FeedbackItem,
   FeedbackMessage,
   GitHubIssueLink,
@@ -124,6 +126,12 @@ const itemRowsToFeedbackItems = (
     message: typeof schema.feedbackMessages.$inferSelect
     author: typeof schema.feedbackUsers.$inferSelect
   }>,
+  voteRows: Array<{
+    feedbackId: string
+    value: number
+    githubId: number
+  }>,
+  currentUserId?: number,
 ) => {
   const messagesByFeedbackId = new Map<string, FeedbackMessage[]>()
 
@@ -146,12 +154,27 @@ const itemRowsToFeedbackItems = (
     messagesByFeedbackId.set(feedbackId, messages)
   }
 
+  const votesByFeedbackId = new Map<string, { score: number; userVote: 1 | -1 | 0 }>()
+
+  for (const vote of voteRows) {
+    const existing = votesByFeedbackId.get(vote.feedbackId) ?? { score: 0, userVote: 0 }
+    existing.score += vote.value
+    if (currentUserId && vote.githubId === currentUserId) {
+      existing.userVote = vote.value === 1 ? 1 : -1
+    }
+    votesByFeedbackId.set(vote.feedbackId, existing)
+  }
+
   return itemRows.map((row) => {
+    const voteState = votesByFeedbackId.get(row.item.id) ?? { score: 0, userVote: 0 }
+    const category: FeedbackCategory = row.item.category === 'bug' ? 'bug' : 'feature'
+
     return {
       id: row.item.id,
       title: row.item.title,
       description: row.item.description,
       status: row.item.status === 'promoted' ? 'promoted' : 'open',
+      category,
       createdAt: toIso(row.item.createdAt),
       updatedAt: toIso(row.item.updatedAt),
       author: {
@@ -170,11 +193,20 @@ const itemRowsToFeedbackItems = (
             createdAt: toIso(row.issue.createdAt),
           }
         : null,
+      voteScore: voteState.score,
+      userVote: voteState.userVote,
     } satisfies FeedbackItem
   })
 }
 
-const loadFeedbackItems = async (id?: string) => {
+const loadFeedbackItems = async (
+  filters: {
+    id?: string
+    category?: FeedbackCategory
+    search?: string
+    currentUserId?: number
+  } = {},
+) => {
   const query = db
     .select({
       item: schema.feedbackItems,
@@ -191,12 +223,21 @@ const loadFeedbackItems = async (id?: string) => {
       eq(schema.feedbackItems.id, schema.githubIssues.feedbackId),
     )
 
-  const itemRows = id
-    ? await query
-        .where(eq(schema.feedbackItems.id, id))
-        .orderBy(desc(schema.feedbackItems.updatedAt))
+  const conditions = []
+
+  if (filters.id) {
+    conditions.push(eq(schema.feedbackItems.id, filters.id))
+  }
+
+  if (filters.category) {
+    conditions.push(eq(schema.feedbackItems.category, filters.category))
+  }
+
+  const itemRows = conditions.length
+    ? await query.where(and(...conditions)).orderBy(desc(schema.feedbackItems.updatedAt))
     : await query.orderBy(desc(schema.feedbackItems.updatedAt))
   const feedbackIds = itemRows.map((row) => row.item.id)
+
   const messageRows = feedbackIds.length
     ? await db
         .select({
@@ -215,7 +256,28 @@ const loadFeedbackItems = async (id?: string) => {
         .orderBy(asc(schema.feedbackMessages.createdAt))
     : []
 
-  return itemRowsToFeedbackItems(itemRows, messageRows)
+  const voteRows = feedbackIds.length
+    ? await db
+        .select({
+          feedbackId: schema.feedbackVotes.feedbackId,
+          value: schema.feedbackVotes.value,
+          githubId: schema.feedbackVotes.githubId,
+        })
+        .from(schema.feedbackVotes)
+        .where(inArray(schema.feedbackVotes.feedbackId, feedbackIds))
+    : []
+
+  let items = itemRowsToFeedbackItems(itemRows, messageRows, voteRows, filters.currentUserId)
+
+  if (filters.search) {
+    const normalizedSearch = filters.search.trim().toLowerCase()
+    items = items.filter((item) =>
+      item.title.toLowerCase().includes(normalizedSearch)
+      || item.description.toLowerCase().includes(normalizedSearch),
+    )
+  }
+
+  return items
 }
 
 export const resolveFeedbackUser = async (
@@ -292,14 +354,50 @@ export const addAdminUser = async (
   return listAdminUsers(event)
 }
 
-export const listFeedbackItems = async (_event: unknown) => {
+export const listFeedbackItems = async (
+  _event: unknown,
+  options: {
+    category?: FeedbackCategory
+    sort?: string
+    search?: string
+    user?: PublicFeedbackUser | null
+  } = {},
+) => {
   await bootstrapConfiguredAdmins()
 
-  return loadFeedbackItems()
+  const items = await loadFeedbackItems({
+    category: options.category,
+    search: options.search,
+    currentUserId: options.user?.id,
+  })
+
+  const sort = options.sort ?? 'new'
+
+  if (sort === 'top') {
+    items.sort((a, b) => {
+      if (b.voteScore !== a.voteScore) {
+        return b.voteScore - a.voteScore
+      }
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    })
+  } else if (sort === 'trending') {
+    const now = Date.now()
+    const score = (item: FeedbackItem) => {
+      const hours = Math.max(1, (now - new Date(item.createdAt).getTime()) / 36e5)
+      return item.voteScore / Math.pow(hours + 2, 1.5)
+    }
+    items.sort((a, b) => score(b) - score(a))
+  }
+
+  return items
 }
 
-export const getFeedbackItem = async (_event: unknown, id: string) => {
-  const item = (await loadFeedbackItems(id))[0]
+export const getFeedbackItem = async (
+  _event: unknown,
+  id: string,
+  user?: PublicFeedbackUser | null,
+) => {
+  const item = (await loadFeedbackItems({ id, currentUserId: user?.id }))[0]
 
   if (!item) {
     throw feedbackError(404, 'Feedback was not found.')
@@ -318,6 +416,8 @@ export const createFeedbackItem = async (
     (input as { description?: unknown })?.description,
     4000,
   )
+  const rawCategory = normalizeText((input as { category?: unknown })?.category, 20)
+  const category: FeedbackCategory = rawCategory === 'bug' ? 'bug' : 'feature'
 
   if (!title || !description) {
     throw feedbackError(400, 'Title and description are required.')
@@ -332,12 +432,13 @@ export const createFeedbackItem = async (
     title,
     description,
     status: 'open',
+    category,
     authorGithubId: user.id,
     createdAt: timestamp,
     updatedAt: timestamp,
   })
 
-  return getFeedbackItem(event, id)
+  return getFeedbackItem(event, id, user)
 }
 
 export const addFeedbackMessage = async (
@@ -352,7 +453,7 @@ export const addFeedbackMessage = async (
     throw feedbackError(400, 'Message is required.')
   }
 
-  await getFeedbackItem(event, id)
+  await getFeedbackItem(event, id, user)
   await upsertUser(user)
 
   const timestamp = now()
@@ -369,7 +470,95 @@ export const addFeedbackMessage = async (
     .set({ updatedAt: timestamp })
     .where(eq(schema.feedbackItems.id, id))
 
-  return getFeedbackItem(event, id)
+  return getFeedbackItem(event, id, user)
+}
+
+export const voteFeedbackItem = async (
+  event: unknown,
+  user: PublicFeedbackUser,
+  id: string,
+  input: unknown,
+) => {
+  const rawValue = (input as { value?: unknown })?.value
+  const value = typeof rawValue === 'number' ? rawValue : Number(rawValue)
+
+  if (![1, -1, 0].includes(value)) {
+    throw feedbackError(400, 'Vote value must be 1, -1, or 0.')
+  }
+
+  await getFeedbackItem(event, id, user)
+  await upsertUser(user)
+
+  if (value === 0) {
+    await db
+      .delete(schema.feedbackVotes)
+      .where(
+        and(
+          eq(schema.feedbackVotes.feedbackId, id),
+          eq(schema.feedbackVotes.githubId, user.id),
+        ),
+      )
+  } else {
+    await db
+      .insert(schema.feedbackVotes)
+      .values({
+        feedbackId: id,
+        githubId: user.id,
+        value,
+        createdAt: now(),
+      })
+      .onConflictDoUpdate({
+        target: [schema.feedbackVotes.feedbackId, schema.feedbackVotes.githubId],
+        set: {
+          value,
+          createdAt: now(),
+        },
+      })
+  }
+
+  return getFeedbackItem(event, id, user)
+}
+
+export const listTopContributors = async (
+  _event: unknown,
+  limit = 8,
+): Promise<FeedbackContributor[]> => {
+  await bootstrapConfiguredAdmins()
+
+  const scores = db
+    .select({
+      authorGithubId: schema.feedbackItems.authorGithubId,
+      score: sql<number>`COALESCE(SUM(${schema.feedbackVotes.value}), 0)`.as('score'),
+    })
+    .from(schema.feedbackVotes)
+    .innerJoin(
+      schema.feedbackItems,
+      eq(schema.feedbackVotes.feedbackId, schema.feedbackItems.id),
+    )
+    .groupBy(schema.feedbackItems.authorGithubId)
+    .as('scores')
+
+  const rows = await db
+    .select({
+      author: schema.feedbackUsers,
+      score: scores.score,
+    })
+    .from(scores)
+    .innerJoin(
+      schema.feedbackUsers,
+      eq(scores.authorGithubId, schema.feedbackUsers.githubId),
+    )
+    .orderBy(desc(scores.score))
+    .limit(limit)
+
+  return rows.map((row) => ({
+    id: row.author.githubId,
+    login: row.author.githubLogin,
+    name: row.author.name,
+    avatarUrl: row.author.avatarUrl,
+    htmlUrl: row.author.htmlUrl,
+    score: row.score,
+  }))
 }
 
 export const markFeedbackPromoted = async (

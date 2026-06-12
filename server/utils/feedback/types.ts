@@ -1,3 +1,5 @@
+export type FeedbackCategory = 'feature' | 'bug'
+
 export type FeedbackAuthor = {
   id: number
   login: string
@@ -29,9 +31,23 @@ export type FeedbackItem = {
   title: string
   description: string
   status: 'open' | 'promoted'
+  category: FeedbackCategory
   createdAt: string
   updatedAt: string
   author: FeedbackAuthor
   messages: FeedbackMessage[]
   issue: GitHubIssueLink | null
+  voteScore: number
+  userVote: 1 | -1 | 0
+}
+
+export type FeedbackVote = {
+  feedbackId: string
+  githubId: number
+  value: 1 | -1
+  createdAt: string
+}
+
+export type FeedbackContributor = FeedbackAuthor & {
+  score: number
 }
