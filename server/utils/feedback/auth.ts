@@ -44,13 +44,26 @@ type GitHubOAuthUser = {
   html_url?: string
 }
 
+const normalizeEnvValue = (value: string | undefined) => {
+  const trimmedValue = (value || '').trim()
+
+  if (
+    (trimmedValue.startsWith('"') && trimmedValue.endsWith('"')) ||
+    (trimmedValue.startsWith("'") && trimmedValue.endsWith("'"))
+  ) {
+    return trimmedValue.slice(1, -1).trim()
+  }
+
+  return trimmedValue
+}
+
 const getFeedbackConfig = (_event: unknown): FeedbackRuntimeConfig => {
   return {
-    siteUrl: process.env.NORA_SITE_URL || '',
-    sessionSecret: process.env.NORA_SESSION_SECRET || '',
+    siteUrl: normalizeEnvValue(process.env.NORA_SITE_URL),
+    sessionSecret: normalizeEnvValue(process.env.NORA_SESSION_SECRET),
     githubOAuth: {
-      clientId: process.env.GITHUB_CLIENT_ID || '',
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+      clientId: normalizeEnvValue(process.env.GITHUB_CLIENT_ID),
+      clientSecret: normalizeEnvValue(process.env.GITHUB_CLIENT_SECRET),
     },
   }
 }

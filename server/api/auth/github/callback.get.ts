@@ -16,6 +16,7 @@ type GitHubTokenResponse = {
   access_token?: string
   error?: string
   error_description?: string
+  error_uri?: string
 }
 
 export default (event: any) => withApiResponse(event, async () => {
@@ -27,17 +28,31 @@ export default (event: any) => withApiResponse(event, async () => {
 
   const code = getQueryValue(event, 'code') ?? ''
   const state = getQueryValue(event, 'state') ?? ''
+  const callbackError = getQueryValue(event, 'error')
+  const callbackErrorDescription = getQueryValue(event, 'error_description')
+
+  if (callbackError) {
+    throw feedbackError(
+      401,
+      callbackErrorDescription || `GitHub OAuth failed: ${callbackError}`,
+      {
+        providerError: callbackError,
+        providerDescription: callbackErrorDescription,
+      },
+    )
+  }
 
   if (!code || !state) {
     throw feedbackError(400, 'GitHub OAuth callback is missing code or state.')
   }
 
   const oauthState = consumeFeedbackOAuthState(event, state)
+  const redirectUri = getGitHubOAuthRedirectUrl(event)
   const tokenRequestBody = new URLSearchParams({
     grant_type: 'authorization_code',
     client_id: oauthConfig.clientId,
     client_secret: oauthConfig.clientSecret,
-    redirect_uri: getGitHubOAuthRedirectUrl(event),
+    redirect_uri: redirectUri,
     code,
   })
   const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -49,12 +64,21 @@ export default (event: any) => withApiResponse(event, async () => {
     },
     body: tokenRequestBody.toString(),
   })
-  const tokenBody = (await tokenResponse.json()) as GitHubTokenResponse
+  const tokenBody = (await tokenResponse.json().catch(() => ({}))) as GitHubTokenResponse
 
   if (!tokenResponse.ok || !tokenBody.access_token || tokenBody.error) {
     throw feedbackError(
       401,
-      tokenBody.error_description || 'GitHub OAuth token exchange failed.',
+      tokenBody.error_description ||
+        tokenBody.error ||
+        'GitHub OAuth token exchange failed.',
+      {
+        providerStatus: tokenResponse.status,
+        providerError: tokenBody.error,
+        providerDescription: tokenBody.error_description,
+        providerErrorUri: tokenBody.error_uri,
+        redirectUri,
+      },
     )
   }
 
