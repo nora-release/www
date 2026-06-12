@@ -173,10 +173,6 @@ const replaceFeedbackItem = (item: FeedbackItem) => {
 }
 
 const loadFeedback = async () => {
-  if (!user.value) {
-    return
-  }
-
   isLoadingFeedback.value = true
   pageError.value = ''
 
@@ -221,24 +217,22 @@ const loadSession = async () => {
 
   try {
     session.value = await $fetch<SessionResponse>('/api/auth/session')
+  } catch (error) {
+    session.value = null
+    pageError.value = getErrorMessage(error, 'Session could not be loaded.')
+  }
 
-    if (session.value.user) {
-      await loadFeedback()
+  await loadFeedback()
 
-      if (session.value.user.isAdmin) {
-        await loadAdmins()
-      } else {
-        admins.value = []
-        knownUsers.value = []
-      }
+  try {
+    if (session.value?.user?.isAdmin) {
+      await loadAdmins()
     } else {
-      items.value = []
       admins.value = []
       knownUsers.value = []
-      selectedId.value = null
     }
   } catch (error) {
-    pageError.value = getErrorMessage(error, 'Session could not be loaded.')
+    adminError.value = getErrorMessage(error, 'Admins could not be loaded.')
   } finally {
     isLoadingSession.value = false
   }
@@ -251,6 +245,12 @@ const createFeedback = async () => {
 
   formError.value = ''
   actionMessage.value = ''
+
+  if (!user.value) {
+    formError.value = 'Sign in with GitHub to add feedback.'
+    return
+  }
+
   isCreating.value = true
 
   try {
@@ -319,6 +319,12 @@ const addReply = async () => {
 
   replyError.value = ''
   actionMessage.value = ''
+
+  if (!user.value) {
+    replyError.value = 'Sign in with GitHub to reply.'
+    return
+  }
+
   isReplying.value = true
 
   try {
@@ -413,19 +419,23 @@ onMounted(loadSession)
         <div class="feedback-hero-copy">
           <p class="eyebrow">
             <span class="i-lucide-message-square size-[1.125rem]" aria-hidden="true" />
-            Feedback
+            Feedback community
           </p>
-          <h1 id="feedback-title">Help shape Nora.</h1>
+          <h1 id="feedback-title">Talk about Nora together.</h1>
           <p>
-            Share requests, report problems, and continue the discussion after
-            the first note is posted.
+            Read every request, add your own context, and help the team decide
+            what should become a tracked issue.
           </p>
         </div>
 
         <div class="feedback-hero-meta" aria-label="Feedback requirements">
           <div class="feedback-stat">
-            <span class="i-lucide-lock-keyhole size-5" aria-hidden="true" />
-            GitHub login
+            <span class="i-lucide-messages-square size-5" aria-hidden="true" />
+            Public discussion
+          </div>
+          <div class="feedback-stat">
+            <span class="i-lucide-github size-5" aria-hidden="true" />
+            GitHub login to post
           </div>
           <div class="feedback-stat">
             <span class="i-lucide-shield-check size-5" aria-hidden="true" />
@@ -442,35 +452,9 @@ onMounted(loadSession)
         Loading feedback...
       </section>
 
-      <section
-        v-else-if="!user"
-        class="feedback-login section-shell"
-        aria-labelledby="feedback-login-title"
-      >
-        <span class="feedback-login-icon i-lucide-github" aria-hidden="true" />
-        <div>
-          <h2 id="feedback-login-title">Sign in with GitHub</h2>
-          <p>
-            Feedback, replies, and admin actions are available after login.
-          </p>
-        </div>
-        <a
-          v-if="session?.auth.githubConfigured"
-          class="button button-primary"
-          :href="loginHref"
-        >
-          Continue with GitHub
-          <span class="i-lucide-github size-5" aria-hidden="true" />
-        </a>
-        <p v-else class="feedback-alert">
-          <span class="i-lucide-circle-alert size-5" aria-hidden="true" />
-          GitHub OAuth is not configured.
-        </p>
-      </section>
-
       <section v-else class="feedback-workspace section-shell">
         <aside class="feedback-sidebar" aria-label="Feedback list and new feedback">
-          <div class="feedback-account">
+          <div v-if="user" class="feedback-account">
             <img
               class="feedback-avatar"
               :src="user.avatarUrl"
@@ -493,7 +477,27 @@ onMounted(loadSession)
             </button>
           </div>
 
-          <form class="feedback-form" @submit.prevent="createFeedback">
+          <div v-else class="feedback-community-card">
+            <span class="feedback-community-icon i-lucide-github" aria-hidden="true" />
+            <div>
+              <strong>Join the discussion</strong>
+              <p>Sign in to add feedback or reply.</p>
+            </div>
+            <a
+              v-if="session?.auth.githubConfigured"
+              class="button button-primary"
+              :href="loginHref"
+            >
+              Sign in
+              <span class="i-lucide-github size-5" aria-hidden="true" />
+            </a>
+            <p v-else class="feedback-alert">
+              <span class="i-lucide-circle-alert size-5" aria-hidden="true" />
+              GitHub OAuth is not configured.
+            </p>
+          </div>
+
+          <form v-if="user" class="feedback-form" @submit.prevent="createFeedback">
             <label class="feedback-field">
               <span>Title</span>
               <input
@@ -527,7 +531,12 @@ onMounted(loadSession)
             </button>
           </form>
 
-          <div v-if="user.isAdmin" class="feedback-admin-panel">
+          <div v-else class="feedback-locked-panel">
+            <span class="i-lucide-lock-keyhole size-5" aria-hidden="true" />
+            <p>Sign in with GitHub to start a new feedback thread.</p>
+          </div>
+
+          <div v-if="user?.isAdmin" class="feedback-admin-panel">
             <div class="feedback-list-head">
               <span>Admins</span>
               <button
@@ -606,7 +615,11 @@ onMounted(loadSession)
             {{ pageError }}
           </p>
 
-          <div v-if="items.length" class="feedback-list">
+          <p v-if="isLoadingFeedback && !items.length" class="feedback-empty">
+            Loading feedback...
+          </p>
+
+          <div v-else-if="items.length" class="feedback-list">
             <button
               v-for="item in items"
               :key="item.id"
@@ -694,7 +707,11 @@ onMounted(loadSession)
               No replies yet.
             </p>
 
-            <form class="feedback-reply-form" @submit.prevent="addReply">
+            <form
+              v-if="user"
+              class="feedback-reply-form"
+              @submit.prevent="addReply"
+            >
               <label class="feedback-field">
                 <span>Reply</span>
                 <textarea
@@ -719,7 +736,20 @@ onMounted(loadSession)
               </div>
             </form>
 
-            <div v-if="user.isAdmin" class="feedback-admin-bar">
+            <div v-else class="feedback-locked-panel feedback-thread-login">
+              <span class="i-lucide-lock-keyhole size-5" aria-hidden="true" />
+              <p>Sign in with GitHub to join this conversation.</p>
+              <a
+                v-if="session?.auth.githubConfigured"
+                class="button button-outline"
+                :href="loginHref"
+              >
+                Sign in
+                <span class="i-lucide-github size-5" aria-hidden="true" />
+              </a>
+            </div>
+
+            <div v-if="user?.isAdmin" class="feedback-admin-bar">
               <div>
                 <strong>Admin</strong>
                 <span>

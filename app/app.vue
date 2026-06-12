@@ -914,8 +914,7 @@ h1 {
   box-shadow: var(--soft-shadow);
 }
 
-.feedback-state,
-.feedback-login {
+.feedback-state {
   display: grid;
   align-items: center;
   gap: 1.1rem;
@@ -925,32 +924,6 @@ h1 {
   border-radius: 2.1rem;
   background: rgba(254, 254, 250, 0.86);
   box-shadow: var(--soft-shadow);
-}
-
-.feedback-login {
-  grid-template-columns: auto 1fr auto;
-}
-
-.feedback-login-icon {
-  display: grid;
-  width: 3.4rem;
-  height: 3.4rem;
-  place-items: center;
-  border-radius: 1.15rem;
-  background: var(--foreground);
-  color: var(--primary-foreground);
-  font-size: 1.65rem;
-}
-
-.feedback-login h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.65rem;
-}
-
-.feedback-login p {
-  margin: 0;
-  color: var(--muted-foreground);
-  line-height: 1.58;
 }
 
 .feedback-workspace {
@@ -996,10 +969,60 @@ h1 {
 }
 
 .feedback-account strong,
+.feedback-community-card strong,
 .feedback-message-author strong,
 .feedback-admin-bar strong {
   display: block;
   color: var(--foreground);
+}
+
+.feedback-community-card,
+.feedback-locked-panel {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid rgba(222, 216, 207, 0.74);
+  border-radius: 1.25rem;
+  background: rgba(240, 235, 229, 0.48);
+  padding: 0.9rem;
+}
+
+.feedback-community-card {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.feedback-community-card .button,
+.feedback-community-card .feedback-alert {
+  grid-column: 1 / -1;
+}
+
+.feedback-community-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: var(--primary-foreground);
+  font-size: 1.35rem;
+}
+
+.feedback-community-card p,
+.feedback-locked-panel p {
+  margin: 0;
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  font-weight: 800;
+}
+
+.feedback-locked-panel {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  color: var(--primary);
+}
+
+.feedback-thread-login {
+  grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
 .feedback-avatar,
@@ -1425,7 +1448,7 @@ h1 {
     justify-content: flex-start;
   }
 
-  .feedback-login {
+  .feedback-thread-login {
     grid-template-columns: 1fr;
   }
 }

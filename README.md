@@ -11,7 +11,8 @@ Seamlessly switch between OpenAI, Anthropic, Google Gemini, and custom providers
 
 ## Feedback
 
-The `/feedback` page requires GitHub OAuth login.
+The `/feedback` page shows a public feedback community. GitHub OAuth login is
+required to create feedback, reply, manage admins, or promote feedback to issues.
 
 Configure these environment variables before enabling it:
 
