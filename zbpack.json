@@ -1,0 +1,4 @@
+{
+  "app_dir": "/",
+  "build_command": "SERVER_PRESET=zeabur pnpm run build"
+}

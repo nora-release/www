@@ -17,6 +17,7 @@ Configure these environment variables before enabling it:
 
 | Variable | Purpose |
 | --- | --- |
+| `SERVER_PRESET` | Set to `zeabur` when deploying Nuxt on Zeabur. |
 | `NORA_SITE_URL` | Public site origin used for the GitHub OAuth callback. |
 | `NORA_SESSION_SECRET` | Long random string used to sign login cookies. |
 | `GITHUB_CLIENT_ID` | GitHub OAuth app client id. |
