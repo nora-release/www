@@ -22,15 +22,15 @@ export type FaqItem = {
 export const downloadHref = '/api/download?platform=macos'
 
 export const navItems: NavItem[] = [
-  { label: 'Features', href: '#features' },
-  { label: 'Download', href: '#download' },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Download', href: '/#download' },
+  { label: 'FAQ', href: '/#faq' },
   { label: 'Feedback', href: '/feedback' },
 ]
 
 export const footerLinks: NavItem[] = [
-  { label: 'Features', href: '#features' },
-  { label: 'Download', href: '#download' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Download', href: '/#download' },
   { label: 'Feedback', href: '/feedback' },
 ]
 

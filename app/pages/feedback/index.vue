@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { downloadHref, type NavItem } from '../../data/home'
+import { footerLinks } from '../../data/home'
 import type { FeedbackCategory, FeedbackContributor, FeedbackItem } from '../../server/utils/feedback/types'
 
 type FeedbackUser = {
@@ -21,19 +21,6 @@ type SessionResponse = {
     issueRepo: string
   }
 }
-
-const feedbackNavItems: NavItem[] = [
-  { label: 'Home', href: '/' },
-  { label: 'Features', href: '/#features' },
-  { label: 'Download', href: '/#download' },
-  { label: 'FAQ', href: '/#faq' },
-]
-
-const feedbackFooterLinks: NavItem[] = [
-  { label: 'Features', href: '/#features' },
-  { label: 'Download', href: '/#download' },
-  { label: 'FAQ', href: '/#faq' },
-]
 
 const session = ref<SessionResponse | null>(null)
 const items = ref<FeedbackItem[]>([])
@@ -270,12 +257,6 @@ onMounted(async () => {
 
 <template>
   <div id="top" class="feedback-page">
-    <AppHeader
-      :nav-items="feedbackNavItems"
-      :download-href="downloadHref"
-      brand-href="/"
-    />
-
     <main class="feedback-shell">
       <section v-if="isLoadingSession" class="feedback-state" aria-live="polite">
         Loading feedback...
@@ -365,7 +346,7 @@ onMounted(async () => {
       </section>
     </main>
 
-    <SiteFooter :links="feedbackFooterLinks" />
+    <SiteFooter :links="footerLinks" />
   </div>
 </template>
 
@@ -430,7 +411,7 @@ onMounted(async () => {
 }
 
 .feedback-shell {
-  width: min(100% - 2rem, 64rem);
+  width: min(calc(100% - 2rem), 64rem);
   margin: 0 auto;
   padding: 7.5rem 0 4rem;
 }
@@ -583,7 +564,7 @@ onMounted(async () => {
 
 @media (max-width: 520px) {
   .feedback-shell {
-    width: min(100% - 1rem, 64rem);
+    width: min(calc(100% - 2rem), 64rem);
     padding-top: 6.25rem;
   }
 

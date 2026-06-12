@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { navItems } from './data/home'
+
+const route = useRoute()
+const brandHref = computed(() => route.path === '/' ? '#top' : '/')
+
 useHead({
   htmlAttrs: {
     lang: 'en',
@@ -43,6 +49,10 @@ useHead({
 
 <template>
   <NuxtRouteAnnouncer />
+  <AppHeader
+    :nav-items="navItems"
+    :brand-href="brandHref"
+  />
   <NuxtPage />
 </template>
 

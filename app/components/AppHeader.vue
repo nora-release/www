@@ -5,7 +5,6 @@ import type { NavItem } from '../data/home'
 const props = withDefaults(
   defineProps<{
     navItems: NavItem[]
-    downloadHref: string
     brandHref?: string
     ctaHref?: string
     ctaLabel?: string

@@ -4,19 +4,12 @@ import {
   faqs,
   features,
   footerLinks,
-  navItems,
   workModes,
 } from '../data/home'
 </script>
 
 <template>
   <div class="home-page">
-    <AppHeader
-      :nav-items="navItems"
-      :download-href="downloadHref"
-      brand-href="#top"
-    />
-
     <main id="top">
       <HeroSection :download-href="downloadHref" />
       <WorkModesSection :modes="workModes" />
