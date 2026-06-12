@@ -33,19 +33,21 @@ export default (event: any) => withApiResponse(event, async () => {
   }
 
   const oauthState = consumeFeedbackOAuthState(event, state)
+  const tokenRequestBody = new URLSearchParams({
+    grant_type: 'authorization_code',
+    client_id: oauthConfig.clientId,
+    client_secret: oauthConfig.clientSecret,
+    redirect_uri: getGitHubOAuthRedirectUrl(event),
+    code,
+  })
   const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': 'nora-www-feedback',
     },
-    body: JSON.stringify({
-      client_id: oauthConfig.clientId,
-      client_secret: oauthConfig.clientSecret,
-      code,
-      redirect_uri: getGitHubOAuthRedirectUrl(event),
-    }),
+    body: tokenRequestBody.toString(),
   })
   const tokenBody = (await tokenResponse.json()) as GitHubTokenResponse
 
@@ -59,7 +61,7 @@ export default (event: any) => withApiResponse(event, async () => {
   const userResponse = await fetch('https://api.github.com/user', {
     headers: {
       Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${tokenBody.access_token}`,
+      Authorization: `token ${tokenBody.access_token}`,
       'User-Agent': 'nora-www-feedback',
       'X-GitHub-Api-Version': '2022-11-28',
     },
