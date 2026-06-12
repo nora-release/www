@@ -51,11 +51,10 @@ const handleVote = (value: 1 | -1) => {
   align-items: center;
   justify-items: center;
   gap: 0.1rem;
-  padding: 0.45rem 0.35rem;
-  border: 1px solid rgba(222, 216, 207, 0.85);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.72);
-  min-width: 3rem;
+  min-width: 2.8rem;
+  padding: 0.35rem 0.25rem;
+  border-left: 1px solid var(--fb-border-soft);
+  color: var(--fb-muted);
 }
 
 .vote-button {
@@ -64,9 +63,9 @@ const handleVote = (value: 1 | -1) => {
   height: 1.6rem;
   place-items: center;
   border: 0;
-  border-radius: 0.6rem;
+  border-radius: 0.45rem;
   background: transparent;
-  color: var(--muted-foreground);
+  color: var(--fb-subtle);
   cursor: pointer;
   transition:
     color 200ms ease,
@@ -75,8 +74,8 @@ const handleVote = (value: 1 | -1) => {
 }
 
 .vote-button:hover:not(:disabled) {
-  background: rgba(93, 112, 82, 0.1);
-  color: var(--primary);
+  background: rgba(168, 189, 121, 0.09);
+  color: var(--fb-accent);
 }
 
 .vote-button:active:not(:disabled) {
@@ -89,13 +88,13 @@ const handleVote = (value: 1 | -1) => {
 }
 
 .vote-active {
-  color: var(--primary) !important;
-  background: rgba(93, 112, 82, 0.14) !important;
+  color: var(--fb-accent) !important;
+  background: rgba(168, 189, 121, 0.12) !important;
 }
 
 .vote-active-down {
-  color: var(--destructive) !important;
-  background: rgba(168, 84, 72, 0.12) !important;
+  color: var(--fb-danger) !important;
+  background: rgba(235, 117, 109, 0.12) !important;
 }
 
 .vote-score {
@@ -103,10 +102,10 @@ const handleVote = (value: 1 | -1) => {
   text-align: center;
   font-size: 0.95rem;
   font-weight: 900;
-  color: var(--foreground);
+  color: var(--fb-text);
 }
 
 .vote-score-active {
-  color: var(--primary);
+  color: var(--fb-accent);
 }
 </style>

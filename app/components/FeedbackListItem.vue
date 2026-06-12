@@ -39,7 +39,12 @@ const handleVote = (value: 1 | -1) => {
         <div class="feedback-card-header">
           <h3 class="feedback-card-title">{{ item.title }}</h3>
           <div class="feedback-card-pills">
-            <span class="feedback-card-category">{{ categoryLabel }}</span>
+            <span
+              class="feedback-card-category"
+              :class="`feedback-card-category-${item.category}`"
+            >
+              {{ categoryLabel }}
+            </span>
             <span
               class="feedback-card-status"
               :class="`feedback-card-status-${item.status}`"
@@ -84,24 +89,22 @@ const handleVote = (value: 1 | -1) => {
 .feedback-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
+  gap: 0.9rem;
   align-items: start;
-  border: 1px solid rgba(222, 216, 207, 0.74);
-  border-radius: 1.4rem 1.8rem 1.6rem 1.3rem;
-  background: rgba(255, 255, 255, 0.68);
-  padding: 1rem;
+  border-bottom: 1px solid var(--fb-border-soft);
+  background: var(--fb-panel);
+  padding: 1rem 0.95rem;
   transition:
-    border-color 220ms ease,
     background 220ms ease,
-    transform 220ms ease,
-    box-shadow 220ms ease;
+    border-color 220ms ease;
+}
+
+.feedback-card:last-child {
+  border-bottom: 0;
 }
 
 .feedback-card:hover {
-  border-color: rgba(93, 112, 82, 0.38);
-  background: rgba(255, 255, 255, 0.88);
-  transform: translateY(-0.08rem);
-  box-shadow: var(--soft-shadow);
+  background: var(--fb-panel-strong);
 }
 
 .feedback-card-main {
@@ -126,11 +129,10 @@ const handleVote = (value: 1 | -1) => {
 
 .feedback-card-title {
   margin: 0;
-  font-family: var(--font-heading);
-  font-size: 1.15rem;
-  font-weight: 760;
+  font-size: 1.02rem;
+  font-weight: 850;
   line-height: 1.22;
-  color: var(--foreground);
+  color: var(--fb-text);
   overflow-wrap: anywhere;
 }
 
@@ -146,33 +148,40 @@ const handleVote = (value: 1 | -1) => {
   display: inline-flex;
   align-items: center;
   min-height: 1.6rem;
-  padding: 0.2rem 0.55rem;
+  padding: 0.18rem 0.5rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0;
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .feedback-card-category {
-  background: rgba(230, 220, 205, 0.72);
-  color: var(--accent-foreground);
+  border: 1px solid rgba(209, 177, 95, 0.16);
+  background: rgba(209, 177, 95, 0.08);
+  color: var(--fb-feature);
+}
+
+.feedback-card-category-bug {
+  border-color: rgba(235, 117, 109, 0.18);
+  background: rgba(235, 117, 109, 0.08);
+  color: var(--fb-danger);
 }
 
 .feedback-card-status {
-  background: rgba(93, 112, 82, 0.12);
-  color: var(--primary);
+  border: 1px solid rgba(168, 189, 121, 0.16);
+  background: rgba(168, 189, 121, 0.08);
+  color: var(--fb-accent);
 }
 
 .feedback-card-status-promoted {
-  background: rgba(193, 140, 93, 0.16);
-  color: var(--secondary);
+  border-color: rgba(155, 183, 255, 0.18);
+  background: rgba(155, 183, 255, 0.08);
+  color: #9bb7ff;
 }
 
 .feedback-card-excerpt {
   margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.95rem;
+  color: var(--fb-muted);
+  font-size: 0.93rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
   display: -webkit-box;
@@ -186,7 +195,7 @@ const handleVote = (value: 1 | -1) => {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem;
-  color: var(--muted-foreground);
+  color: var(--fb-subtle);
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -196,11 +205,11 @@ const handleVote = (value: 1 | -1) => {
   height: 1.375rem;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(222, 216, 207, 0.82);
+  border: 1px solid var(--fb-border);
 }
 
 .feedback-card-author {
-  color: var(--accent-foreground);
+  color: var(--fb-muted);
 }
 
 .feedback-card-replies {

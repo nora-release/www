@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { downloadHref, type NavItem } from '../../data/home'
 import type { FeedbackCategory, FeedbackContributor, FeedbackItem } from '../../server/utils/feedback/types'
 
 type FeedbackUser = {
@@ -22,19 +21,6 @@ type SessionResponse = {
   }
 }
 
-const feedbackNavItems: NavItem[] = [
-  { label: 'Home', href: '/' },
-  { label: 'Features', href: '/#features' },
-  { label: 'Download', href: '/#download' },
-  { label: 'FAQ', href: '/#faq' },
-]
-
-const feedbackFooterLinks: NavItem[] = [
-  { label: 'Features', href: '/#features' },
-  { label: 'Download', href: '/#download' },
-  { label: 'FAQ', href: '/#faq' },
-]
-
 const session = ref<SessionResponse | null>(null)
 const items = ref<FeedbackItem[]>([])
 const contributors = ref<FeedbackContributor[]>([])
@@ -53,6 +39,13 @@ const actionMessage = ref('')
 const createCardRef = ref<InstanceType<typeof FeedbackCreateCard> | null>(null)
 
 const user = computed(() => session.value?.user ?? null)
+const boardCounts = computed(() => {
+  return {
+    all: items.value.length,
+    feature: items.value.filter((item) => item.category === 'feature').length,
+    bug: items.value.filter((item) => item.category === 'bug').length,
+  }
+})
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   const fetchError = error as {
@@ -263,54 +256,23 @@ onMounted(async () => {
 
 <template>
   <div id="top" class="feedback-page">
-    <AppHeader
-      :nav-items="feedbackNavItems"
-      :download-href="downloadHref"
-      brand-href="/"
+    <FeedbackCommunityHeader
+      :user="user"
+      :github-configured="session?.auth.githubConfigured ?? false"
+      :is-signing-out="isLoggingOut"
+      @sign-out="handleSignOut"
     />
 
     <main class="feedback-shell">
-      <section class="feedback-hero section-shell" aria-labelledby="feedback-title">
-        <div class="feedback-hero-copy">
-          <p class="eyebrow">
-            <span class="i-lucide-message-square size-[1.125rem]" aria-hidden="true" />
-            Feedback community
-          </p>
-          <h1 id="feedback-title">Talk about Nora together.</h1>
-          <p>
-            Read every request, add your own context, and help the team decide
-            what should become a tracked issue.
-          </p>
-        </div>
-
-        <div class="feedback-hero-meta" aria-label="Feedback requirements">
-          <div class="feedback-stat">
-            <span class="i-lucide-messages-square size-5" aria-hidden="true" />
-            Public discussion
-          </div>
-          <div class="feedback-stat">
-            <span class="i-lucide-github size-5" aria-hidden="true" />
-            GitHub login to post
-          </div>
-          <div class="feedback-stat">
-            <span class="i-lucide-shield-check size-5" aria-hidden="true" />
-            Admin issue sync
-          </div>
-        </div>
-      </section>
-
-      <section
-        v-if="isLoadingSession"
-        class="feedback-state section-shell"
-        aria-live="polite"
-      >
+      <section v-if="isLoadingSession" class="feedback-state" aria-live="polite">
         Loading feedback...
       </section>
 
-      <section v-else class="feedback-workspace section-shell">
+      <section v-else class="feedback-workspace">
         <div class="feedback-main">
           <FeedbackCreateCard
             ref="createCardRef"
+            :can-post="Boolean(user)"
             :github-configured="session?.auth.githubConfigured ?? false"
             @submit="handleCreate"
           />
@@ -319,9 +281,9 @@ onMounted(async () => {
             <div class="feedback-tabs" role="tablist" aria-label="Sort feedback">
               <button
                 v-for="tab in [
-                  { value: 'new', label: 'New' },
-                  { value: 'top', label: 'Top' },
-                  { value: 'trending', label: 'Trending' },
+                  { value: 'new', label: 'New', icon: 'i-lucide-clock-3' },
+                  { value: 'top', label: 'Top', icon: 'i-lucide-arrow-up-right' },
+                  { value: 'trending', label: 'Trending', icon: 'i-lucide-flame' },
                 ]"
                 :key="tab.value"
                 class="feedback-tab"
@@ -331,6 +293,7 @@ onMounted(async () => {
                 :aria-selected="sort === tab.value"
                 @click="sort = tab.value as typeof sort"
               >
+                <span :class="`${tab.icon} size-4`" aria-hidden="true" />
                 {{ tab.label }}
               </button>
             </div>
@@ -378,28 +341,36 @@ onMounted(async () => {
         </div>
 
         <FeedbackSidebar
-          :user="user"
           :contributors="contributors"
           :current-category="category"
-          :github-configured="session?.auth.githubConfigured ?? false"
+          :counts="boardCounts"
           @select-category="category = $event as typeof category"
-          @sign-out="handleSignOut"
         />
       </section>
     </main>
-
-    <SiteFooter :links="feedbackFooterLinks" />
   </div>
 </template>
 
 <style>
 .feedback-page {
+  --fb-bg: #101218;
+  --fb-panel: #1a1d26;
+  --fb-panel-soft: #151820;
+  --fb-panel-strong: #20242f;
+  --fb-border: #2b303d;
+  --fb-border-soft: #202531;
+  --fb-text: #f1f3f8;
+  --fb-muted: #a7adba;
+  --fb-subtle: #747c8c;
+  --fb-accent: #a8bd79;
+  --fb-accent-strong: #d2e59b;
+  --fb-feature: #d1b15f;
+  --fb-danger: #eb756d;
+  --fb-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    linear-gradient(180deg, rgba(240, 235, 229, 0.86), rgba(253, 252, 248, 0) 26rem),
-    var(--background);
-  color: var(--foreground);
+  background: var(--fb-bg);
+  color: var(--fb-text);
 }
 
 .feedback-page button {
@@ -413,78 +384,56 @@ onMounted(async () => {
   transform: none;
 }
 
+.feedback-page .button {
+  min-height: 2.4rem;
+  border-radius: 0.65rem;
+  padding: 0 0.85rem;
+  font-size: 0.9rem;
+}
+
+.feedback-page .button-primary {
+  background: var(--fb-text);
+  color: var(--fb-bg);
+  box-shadow: none;
+}
+
+.feedback-page .button-primary:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.feedback-page .button-outline {
+  border: 1px solid var(--fb-border);
+  background: var(--fb-panel-strong);
+  color: var(--fb-text);
+}
+
 .feedback-shell {
-  padding-bottom: 3rem;
-}
-
-.feedback-hero {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 2rem;
-  padding: 3rem 0 1.5rem;
-}
-
-.feedback-hero-copy {
-  max-width: 42rem;
-}
-
-.feedback-hero h1 {
-  max-width: 18ch;
-  margin-bottom: 0.85rem;
-  font-size: 2.8rem;
-}
-
-.feedback-hero p:not(.eyebrow) {
-  margin-bottom: 0;
-  color: var(--muted-foreground);
-  font-size: 1.06rem;
-  line-height: 1.72;
-}
-
-.feedback-hero-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.7rem;
-}
-
-.feedback-stat {
-  display: inline-flex;
-  min-height: 3rem;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.72rem 0.95rem;
-  border: 1px solid rgba(222, 216, 207, 0.78);
-  border-radius: 999px;
-  background: rgba(254, 254, 250, 0.78);
-  color: var(--accent-foreground);
-  font-weight: 900;
-  box-shadow: var(--soft-shadow);
+  width: min(100% - 2rem, 64rem);
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
 }
 
 .feedback-state {
   display: grid;
   align-items: center;
   gap: 1.1rem;
-  margin-top: 1rem;
   padding: 1.4rem;
-  border: 1px solid rgba(222, 216, 207, 0.74);
-  border-radius: 2.1rem;
-  background: rgba(254, 254, 250, 0.86);
-  box-shadow: var(--soft-shadow);
+  border: 1px solid var(--fb-border);
+  border-radius: 0.85rem;
+  background: var(--fb-panel);
+  color: var(--fb-muted);
 }
 
 .feedback-workspace {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
   align-items: start;
-  padding: 1rem 0 4rem;
 }
 
 .feedback-main {
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
   min-width: 0;
 }
 
@@ -494,38 +443,38 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0 0.1rem;
+  padding: 0;
 }
 
 .feedback-tabs {
   display: inline-flex;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  border: 1px solid rgba(222, 216, 207, 0.78);
-  border-radius: 999px;
-  background: rgba(254, 254, 250, 0.78);
+  gap: 0.45rem;
 }
 
 .feedback-tab {
-  min-height: 2.4rem;
-  padding: 0 1rem;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--accent-foreground);
+  display: inline-flex;
+  min-height: 2.55rem;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--fb-border);
+  border-radius: 0.65rem;
+  background: var(--fb-panel-soft);
+  color: var(--fb-muted);
+  padding: 0 0.8rem;
   font-size: 0.92rem;
   font-weight: 850;
-  transition: background 200ms ease, color 200ms ease;
+  transition: border-color 200ms ease, background 200ms ease, color 200ms ease;
 }
 
 .feedback-tab:hover {
-  background: rgba(93, 112, 82, 0.08);
-  color: var(--primary);
+  border-color: rgba(168, 189, 121, 0.38);
+  color: var(--fb-text);
 }
 
 .feedback-tab-active {
-  background: rgba(93, 112, 82, 0.14);
-  color: var(--primary);
+  border-color: rgba(168, 189, 121, 0.45);
+  background: var(--fb-panel-strong);
+  color: var(--fb-text);
   font-weight: 900;
 }
 
@@ -533,14 +482,14 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0 0.9rem;
-  border: 1px solid rgba(222, 216, 207, 0.9);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--muted-foreground);
-  min-height: 2.6rem;
+  min-height: 2.55rem;
   min-width: 14rem;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  border: 1px solid var(--fb-border);
+  border-radius: 0.65rem;
+  background: var(--fb-panel-soft);
+  color: var(--fb-subtle);
+  padding: 0 0.8rem;
+  transition: border-color 200ms ease, background 200ms ease;
 }
 
 .feedback-search input {
@@ -548,19 +497,27 @@ onMounted(async () => {
   min-width: 0;
   border: 0;
   background: transparent;
-  color: var(--foreground);
+  color: var(--fb-text);
   font-size: 0.94rem;
   outline: 0;
 }
 
+.feedback-search input::placeholder {
+  color: var(--fb-subtle);
+}
+
 .feedback-search:focus-within {
-  border-color: rgba(93, 112, 82, 0.72);
-  box-shadow: 0 0 0 3px rgba(93, 112, 82, 0.16);
+  border-color: rgba(168, 189, 121, 0.42);
+  background: var(--fb-panel);
 }
 
 .feedback-list {
   display: grid;
-  gap: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--fb-border);
+  border-radius: 0.75rem;
+  background: var(--fb-panel);
+  box-shadow: var(--fb-shadow);
 }
 
 .feedback-empty,
@@ -568,57 +525,44 @@ onMounted(async () => {
 .feedback-action-message {
   margin: 0;
   padding: 1rem;
-  border-radius: 1.15rem;
+  border-radius: 0.75rem;
   line-height: 1.6;
 }
 
 .feedback-empty {
-  color: var(--muted-foreground);
+  border: 1px solid var(--fb-border);
+  background: var(--fb-panel);
+  color: var(--fb-muted);
   font-weight: 800;
-  background: rgba(254, 254, 250, 0.78);
-  border: 1px solid rgba(222, 216, 207, 0.74);
 }
 
 .feedback-inline-error {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: var(--destructive);
+  border: 1px solid rgba(235, 117, 109, 0.28);
+  background: rgba(235, 117, 109, 0.1);
+  color: var(--fb-danger);
   font-weight: 850;
-  background: rgba(168, 84, 72, 0.08);
 }
 
 .feedback-action-message {
-  color: var(--primary);
+  border: 1px solid rgba(168, 189, 121, 0.28);
+  background: rgba(168, 189, 121, 0.1);
+  color: var(--fb-accent-strong);
   font-weight: 900;
-  background: rgba(93, 112, 82, 0.1);
 }
 
 @media (min-width: 900px) {
   .feedback-workspace {
-    grid-template-columns: minmax(0, 1fr) 20rem;
-  }
-}
-
-@media (max-width: 760px) {
-  .feedback-hero {
-    display: grid;
-    align-items: stretch;
-    grid-template-columns: 1fr;
-  }
-
-  .feedback-hero-meta {
-    justify-content: flex-start;
+    grid-template-columns: minmax(0, 1fr) 17.5rem;
   }
 }
 
 @media (max-width: 520px) {
-  .feedback-hero {
-    padding-top: 2.35rem;
-  }
-
-  .feedback-hero h1 {
-    font-size: 2.25rem;
+  .feedback-shell {
+    width: min(100% - 1rem, 64rem);
+    padding-top: 1rem;
   }
 
   .feedback-toolbar {

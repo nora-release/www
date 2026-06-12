@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { downloadHref, type NavItem } from '../../data/home'
-import type { FeedbackItem } from '../../server/utils/feedback/types'
+import type { FeedbackAuthor, FeedbackItem } from '../../server/utils/feedback/types'
+
+type FeedbackUser = FeedbackAuthor & {
+  isAdmin: boolean
+}
 
 type SessionResponse = {
   user: FeedbackUser | null
@@ -12,19 +15,6 @@ type SessionResponse = {
     issueRepo: string
   }
 }
-
-const feedbackNavItems: NavItem[] = [
-  { label: 'Home', href: '/' },
-  { label: 'Features', href: '/#features' },
-  { label: 'Download', href: '/#download' },
-  { label: 'FAQ', href: '/#faq' },
-]
-
-const feedbackFooterLinks: NavItem[] = [
-  { label: 'Features', href: '/#features' },
-  { label: 'Download', href: '/#download' },
-  { label: 'FAQ', href: '/#faq' },
-]
 
 const route = useRoute()
 const id = computed(() => route.params.id as string)
@@ -230,14 +220,15 @@ onMounted(async () => {
 
 <template>
   <div id="top" class="feedback-page">
-    <AppHeader
-      :nav-items="feedbackNavItems"
-      :download-href="downloadHref"
-      brand-href="/"
+    <FeedbackCommunityHeader
+      :user="user"
+      :github-configured="session?.auth.githubConfigured ?? false"
+      :is-signing-out="isLoggingOut"
+      @sign-out="logout"
     />
 
     <main class="feedback-shell">
-      <section class="feedback-detail section-shell" aria-live="polite">
+      <section class="feedback-detail" aria-live="polite">
         <NuxtLink class="feedback-back" to="/feedback">
           <span class="i-lucide-arrow-left size-4" aria-hidden="true" />
           Back to feedback
@@ -255,7 +246,12 @@ onMounted(async () => {
           <header class="feedback-thread-header">
             <div class="feedback-thread-meta">
               <div class="feedback-thread-pills">
-                <span class="feedback-thread-category">{{ categoryLabel }}</span>
+                <span
+                  class="feedback-thread-category"
+                  :class="`feedback-thread-category-${item.category}`"
+                >
+                  {{ categoryLabel }}
+                </span>
                 <span
                   class="feedback-thread-status"
                   :class="`feedback-thread-status-${item.status}`"
@@ -316,8 +312,7 @@ onMounted(async () => {
             class="feedback-reply-form"
             @submit.prevent="addReply"
           >
-            <label class="feedback-field"
-            >
+            <label class="feedback-field">
               <span>Reply</span>
               <textarea
                 v-model="replyDraft"
@@ -341,8 +336,7 @@ onMounted(async () => {
             </div>
           </form>
 
-          <div v-else class="feedback-locked-panel"
-          >
+          <div v-else class="feedback-locked-panel">
             <span class="i-lucide-lock-keyhole size-5" aria-hidden="true" />
             <p>Sign in with GitHub to join this conversation.</p>
             <a
@@ -392,19 +386,29 @@ onMounted(async () => {
         </div>
       </section>
     </main>
-
-    <SiteFooter :links="feedbackFooterLinks" />
   </div>
 </template>
 
 <style>
 .feedback-page {
+  --fb-bg: #101218;
+  --fb-panel: #1a1d26;
+  --fb-panel-soft: #151820;
+  --fb-panel-strong: #20242f;
+  --fb-border: #2b303d;
+  --fb-border-soft: #202531;
+  --fb-text: #f1f3f8;
+  --fb-muted: #a7adba;
+  --fb-subtle: #747c8c;
+  --fb-accent: #a8bd79;
+  --fb-accent-strong: #d2e59b;
+  --fb-feature: #d1b15f;
+  --fb-danger: #eb756d;
+  --fb-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
   min-height: 100vh;
   overflow-x: hidden;
-  background:
-    linear-gradient(180deg, rgba(240, 235, 229, 0.86), rgba(253, 252, 248, 0) 26rem),
-    var(--background);
-  color: var(--foreground);
+  background: var(--fb-bg);
+  color: var(--fb-text);
 }
 
 .feedback-page button {
@@ -418,12 +422,38 @@ onMounted(async () => {
   transform: none;
 }
 
+.feedback-page .button {
+  min-height: 2.4rem;
+  border-radius: 0.65rem;
+  padding: 0 0.85rem;
+  font-size: 0.9rem;
+}
+
+.feedback-page .button-primary {
+  background: var(--fb-text);
+  color: var(--fb-bg);
+  box-shadow: none;
+}
+
+.feedback-page .button-primary:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.feedback-page .button-outline {
+  border: 1px solid var(--fb-border);
+  background: var(--fb-panel-strong);
+  color: var(--fb-text);
+}
+
 .feedback-shell {
-  padding-bottom: 3rem;
+  width: min(100% - 2rem, 50rem);
+  margin: 0 auto;
+  padding: 2rem 0 4rem;
 }
 
 .feedback-detail {
-  padding: 1.5rem 0 4rem;
+  padding: 0;
 }
 
 .feedback-back {
@@ -431,24 +461,24 @@ onMounted(async () => {
   align-items: center;
   gap: 0.45rem;
   margin-bottom: 1rem;
-  color: var(--muted-foreground);
+  color: var(--fb-muted);
   font-size: 0.92rem;
   font-weight: 850;
   transition: color 200ms ease;
 }
 
 .feedback-back:hover {
-  color: var(--primary);
+  color: var(--fb-text);
 }
 
 .feedback-thread {
   display: grid;
   gap: 1.1rem;
-  padding: 1.35rem;
-  border: 1px solid rgba(222, 216, 207, 0.74);
-  border-radius: 2rem 2.6rem 2rem 2.9rem;
-  background: rgba(254, 254, 250, 0.86);
-  box-shadow: var(--soft-shadow);
+  padding: 1.15rem;
+  border: 1px solid var(--fb-border);
+  border-radius: 0.8rem;
+  background: var(--fb-panel);
+  box-shadow: var(--fb-shadow);
 }
 
 .feedback-thread-header {
@@ -476,33 +506,40 @@ onMounted(async () => {
   min-height: 1.7rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.74rem;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0;
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .feedback-thread-category {
-  background: rgba(230, 220, 205, 0.72);
-  color: var(--accent-foreground);
+  border: 1px solid rgba(209, 177, 95, 0.16);
+  background: rgba(209, 177, 95, 0.08);
+  color: var(--fb-feature);
+}
+
+.feedback-thread-category-bug {
+  border-color: rgba(235, 117, 109, 0.18);
+  background: rgba(235, 117, 109, 0.08);
+  color: var(--fb-danger);
 }
 
 .feedback-thread-status {
-  background: rgba(93, 112, 82, 0.12);
-  color: var(--primary);
+  border: 1px solid rgba(168, 189, 121, 0.16);
+  background: rgba(168, 189, 121, 0.08);
+  color: var(--fb-accent);
 }
 
 .feedback-thread-status-promoted {
-  background: rgba(193, 140, 93, 0.16);
-  color: var(--secondary);
+  border-color: rgba(155, 183, 255, 0.18);
+  background: rgba(155, 183, 255, 0.08);
+  color: #9bb7ff;
 }
 
 .feedback-thread h1 {
   margin: 0 0 0.5rem;
-  font-family: var(--font-heading);
-  font-size: 2.15rem;
-  font-weight: 760;
-  line-height: 1.1;
+  color: var(--fb-text);
+  font-size: 1.9rem;
+  font-weight: 880;
+  line-height: 1.12;
   overflow-wrap: anywhere;
 }
 
@@ -511,7 +548,7 @@ onMounted(async () => {
   align-items: center;
   gap: 0.45rem;
   margin: 0;
-  color: var(--muted-foreground);
+  color: var(--fb-muted);
   font-size: 0.9rem;
   font-weight: 800;
 }
@@ -521,15 +558,16 @@ onMounted(async () => {
   height: 1.25rem;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(222, 216, 207, 0.82);
+  border: 1px solid var(--fb-border);
 }
 
 .feedback-description {
   margin: 0;
   padding: 1.1rem;
-  border-radius: 1.3rem;
-  background: rgba(240, 235, 229, 0.6);
-  color: var(--accent-foreground);
+  border: 1px solid var(--fb-border-soft);
+  border-radius: 0.75rem;
+  background: var(--fb-panel-soft);
+  color: var(--fb-muted);
   line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -544,9 +582,9 @@ onMounted(async () => {
   display: grid;
   gap: 0.7rem;
   padding: 1rem;
-  border: 1px solid rgba(222, 216, 207, 0.68);
-  border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid var(--fb-border-soft);
+  border-radius: 0.75rem;
+  background: var(--fb-panel-soft);
 }
 
 .feedback-message p {
@@ -564,11 +602,11 @@ onMounted(async () => {
 
 .feedback-message-author strong {
   display: block;
-  color: var(--foreground);
+  color: var(--fb-text);
 }
 
 .feedback-message-author span {
-  color: var(--muted-foreground);
+  color: var(--fb-subtle);
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -578,7 +616,7 @@ onMounted(async () => {
   height: 2rem;
   border-radius: 999px;
   object-fit: cover;
-  border: 1px solid rgba(222, 216, 207, 0.82);
+  border: 1px solid var(--fb-border);
 }
 
 .feedback-reply-form {
@@ -589,7 +627,7 @@ onMounted(async () => {
 .feedback-field {
   display: grid;
   gap: 0.45rem;
-  color: var(--accent-foreground);
+  color: var(--fb-muted);
   font-weight: 900;
 }
 
@@ -598,19 +636,19 @@ onMounted(async () => {
   min-height: 6.5rem;
   resize: vertical;
   padding: 0.85rem 0.95rem;
-  border: 1px solid rgba(222, 216, 207, 0.9);
-  border-radius: 1.1rem;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--foreground);
+  border: 1px solid var(--fb-border);
+  border-radius: 0.65rem;
+  background: var(--fb-panel-soft);
+  color: var(--fb-text);
   line-height: 1.5;
   outline: 0;
   transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
 }
 
 .feedback-field textarea:focus {
-  border-color: rgba(93, 112, 82, 0.72);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 0 3px rgba(93, 112, 82, 0.16);
+  border-color: rgba(168, 189, 121, 0.45);
+  background: var(--fb-panel);
+  box-shadow: 0 0 0 3px rgba(168, 189, 121, 0.12);
 }
 
 .feedback-actions,
@@ -623,17 +661,17 @@ onMounted(async () => {
 }
 
 .feedback-admin-bar {
-  border-top: 1px solid rgba(222, 216, 207, 0.74);
+  border-top: 1px solid var(--fb-border-soft);
   padding-top: 1rem;
 }
 
 .feedback-admin-bar strong {
   display: block;
-  color: var(--foreground);
+  color: var(--fb-text);
 }
 
 .feedback-admin-bar span {
-  color: var(--muted-foreground);
+  color: var(--fb-muted);
   font-size: 0.86rem;
   font-weight: 800;
 }
@@ -644,15 +682,15 @@ onMounted(async () => {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid rgba(222, 216, 207, 0.74);
-  border-radius: 1.25rem;
-  background: rgba(240, 235, 229, 0.48);
-  color: var(--primary);
+  border: 1px solid var(--fb-border-soft);
+  border-radius: 0.75rem;
+  background: var(--fb-panel-soft);
+  color: var(--fb-accent);
 }
 
 .feedback-locked-panel p {
   margin: 0;
-  color: var(--muted-foreground);
+  color: var(--fb-muted);
   line-height: 1.55;
   font-weight: 800;
 }
@@ -663,31 +701,33 @@ onMounted(async () => {
 .feedback-action-message {
   margin: 0;
   padding: 1.2rem;
-  border-radius: 1.15rem;
+  border-radius: 0.75rem;
   line-height: 1.6;
 }
 
 .feedback-state,
 .feedback-empty {
-  color: var(--muted-foreground);
+  border: 1px solid var(--fb-border);
+  background: var(--fb-panel);
+  color: var(--fb-muted);
   font-weight: 800;
-  background: rgba(254, 254, 250, 0.86);
-  border: 1px solid rgba(222, 216, 207, 0.74);
 }
 
 .feedback-inline-error {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: var(--destructive);
+  border: 1px solid rgba(235, 117, 109, 0.28);
+  background: rgba(235, 117, 109, 0.1);
+  color: var(--fb-danger);
   font-weight: 850;
-  background: rgba(168, 84, 72, 0.08);
 }
 
 .feedback-action-message {
-  color: var(--primary);
+  border: 1px solid rgba(168, 189, 121, 0.28);
+  background: rgba(168, 189, 121, 0.1);
+  color: var(--fb-accent-strong);
   font-weight: 900;
-  background: rgba(93, 112, 82, 0.1);
 }
 
 @media (max-width: 760px) {
@@ -701,8 +741,13 @@ onMounted(async () => {
 }
 
 @media (max-width: 520px) {
+  .feedback-shell {
+    width: min(100% - 1rem, 50rem);
+    padding-top: 1rem;
+  }
+
   .feedback-detail {
-    padding-top: 0.75rem;
+    padding-top: 0;
   }
 
   .feedback-thread {
