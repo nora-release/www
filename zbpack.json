@@ -1,4 +1,0 @@
-{
-  "app_dir": "/",
-  "build_command": "SERVER_PRESET=node-server pnpm run build"
-}
