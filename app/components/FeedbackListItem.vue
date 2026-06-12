@@ -104,7 +104,7 @@ const handleVote = (value: 1 | -1) => {
 }
 
 .feedback-card:hover {
-  background: var(--fb-panel-strong);
+  background: rgba(93, 112, 82, 0.055);
 }
 
 .feedback-card-main {
@@ -129,8 +129,9 @@ const handleVote = (value: 1 | -1) => {
 
 .feedback-card-title {
   margin: 0;
-  font-size: 1.02rem;
-  font-weight: 850;
+  font-family: var(--font-heading);
+  font-size: 1.08rem;
+  font-weight: 760;
   line-height: 1.22;
   color: var(--fb-text);
   overflow-wrap: anywhere;
@@ -167,15 +168,15 @@ const handleVote = (value: 1 | -1) => {
 }
 
 .feedback-card-status {
-  border: 1px solid rgba(168, 189, 121, 0.16);
-  background: rgba(168, 189, 121, 0.08);
+  border: 1px solid rgba(93, 112, 82, 0.16);
+  background: rgba(93, 112, 82, 0.08);
   color: var(--fb-accent);
 }
 
 .feedback-card-status-promoted {
-  border-color: rgba(155, 183, 255, 0.18);
-  background: rgba(155, 183, 255, 0.08);
-  color: #9bb7ff;
+  border-color: rgba(193, 140, 93, 0.18);
+  background: rgba(193, 140, 93, 0.1);
+  color: var(--secondary);
 }
 
 .feedback-card-excerpt {

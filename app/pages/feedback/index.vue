@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { downloadHref, type NavItem } from '../../data/home'
 import type { FeedbackCategory, FeedbackContributor, FeedbackItem } from '../../server/utils/feedback/types'
 
 type FeedbackUser = {
@@ -20,6 +21,19 @@ type SessionResponse = {
     issueRepo: string
   }
 }
+
+const feedbackNavItems: NavItem[] = [
+  { label: 'Home', href: '/' },
+  { label: 'Features', href: '/#features' },
+  { label: 'Download', href: '/#download' },
+  { label: 'FAQ', href: '/#faq' },
+]
+
+const feedbackFooterLinks: NavItem[] = [
+  { label: 'Features', href: '/#features' },
+  { label: 'Download', href: '/#download' },
+  { label: 'FAQ', href: '/#faq' },
+]
 
 const session = ref<SessionResponse | null>(null)
 const items = ref<FeedbackItem[]>([])
@@ -256,11 +270,10 @@ onMounted(async () => {
 
 <template>
   <div id="top" class="feedback-page">
-    <FeedbackCommunityHeader
-      :user="user"
-      :github-configured="session?.auth.githubConfigured ?? false"
-      :is-signing-out="isLoggingOut"
-      @sign-out="handleSignOut"
+    <AppHeader
+      :nav-items="feedbackNavItems"
+      :download-href="downloadHref"
+      brand-href="/"
     />
 
     <main class="feedback-shell">
@@ -341,35 +354,43 @@ onMounted(async () => {
         </div>
 
         <FeedbackSidebar
+          :user="user"
           :contributors="contributors"
           :current-category="category"
           :counts="boardCounts"
+          :is-signing-out="isLoggingOut"
           @select-category="category = $event as typeof category"
+          @sign-out="handleSignOut"
         />
       </section>
     </main>
+
+    <SiteFooter :links="feedbackFooterLinks" />
   </div>
 </template>
 
 <style>
 .feedback-page {
-  --fb-bg: #101218;
-  --fb-panel: #1a1d26;
-  --fb-panel-soft: #151820;
-  --fb-panel-strong: #20242f;
-  --fb-border: #2b303d;
-  --fb-border-soft: #202531;
-  --fb-text: #f1f3f8;
-  --fb-muted: #a7adba;
-  --fb-subtle: #747c8c;
-  --fb-accent: #a8bd79;
-  --fb-accent-strong: #d2e59b;
-  --fb-feature: #d1b15f;
-  --fb-danger: #eb756d;
-  --fb-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
+  --fb-bg: var(--background);
+  --fb-panel: rgba(254, 254, 250, 0.84);
+  --fb-panel-soft: rgba(240, 235, 229, 0.62);
+  --fb-panel-strong: rgba(254, 254, 250, 0.92);
+  --fb-border: rgba(222, 216, 207, 0.78);
+  --fb-border-soft: rgba(222, 216, 207, 0.58);
+  --fb-text: var(--foreground);
+  --fb-muted: var(--muted-foreground);
+  --fb-subtle: #918b7f;
+  --fb-accent: var(--primary);
+  --fb-accent-strong: #46573d;
+  --fb-feature: var(--secondary);
+  --fb-danger: var(--destructive);
+  --fb-shadow: var(--soft-shadow);
   min-height: 100vh;
   overflow-x: hidden;
-  background: var(--fb-bg);
+  background:
+    radial-gradient(circle at 12% 7%, rgba(230, 220, 205, 0.78), transparent 26rem),
+    radial-gradient(circle at 88% 12%, rgba(193, 140, 93, 0.16), transparent 22rem),
+    var(--fb-bg);
   color: var(--fb-text);
 }
 
@@ -385,33 +406,33 @@ onMounted(async () => {
 }
 
 .feedback-page .button {
-  min-height: 2.4rem;
-  border-radius: 0.65rem;
+  min-height: 3rem;
+  border-radius: 999px;
   padding: 0 0.85rem;
   font-size: 0.9rem;
 }
 
 .feedback-page .button-primary {
-  background: var(--fb-text);
-  color: var(--fb-bg);
-  box-shadow: none;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--soft-shadow);
 }
 
 .feedback-page .button-primary:hover {
-  box-shadow: none;
-  transform: none;
+  box-shadow: 0 12px 28px -12px rgba(93, 112, 82, 0.5);
+  transform: scale(1.045);
 }
 
 .feedback-page .button-outline {
-  border: 1px solid var(--fb-border);
-  background: var(--fb-panel-strong);
-  color: var(--fb-text);
+  border: 1px solid rgba(93, 112, 82, 0.2);
+  background: rgba(93, 112, 82, 0.08);
+  color: var(--primary);
 }
 
 .feedback-shell {
   width: min(100% - 2rem, 64rem);
   margin: 0 auto;
-  padding: 2rem 0 4rem;
+  padding: 7.5rem 0 4rem;
 }
 
 .feedback-state {
@@ -420,9 +441,10 @@ onMounted(async () => {
   gap: 1.1rem;
   padding: 1.4rem;
   border: 1px solid var(--fb-border);
-  border-radius: 0.85rem;
+  border-radius: 1.6rem;
   background: var(--fb-panel);
   color: var(--fb-muted);
+  box-shadow: var(--fb-shadow);
 }
 
 .feedback-workspace {
@@ -457,8 +479,8 @@ onMounted(async () => {
   align-items: center;
   gap: 0.4rem;
   border: 1px solid var(--fb-border);
-  border-radius: 0.65rem;
-  background: var(--fb-panel-soft);
+  border-radius: 999px;
+  background: var(--fb-panel-strong);
   color: var(--fb-muted);
   padding: 0 0.8rem;
   font-size: 0.92rem;
@@ -467,14 +489,14 @@ onMounted(async () => {
 }
 
 .feedback-tab:hover {
-  border-color: rgba(168, 189, 121, 0.38);
+  border-color: rgba(93, 112, 82, 0.28);
   color: var(--fb-text);
 }
 
 .feedback-tab-active {
-  border-color: rgba(168, 189, 121, 0.45);
-  background: var(--fb-panel-strong);
-  color: var(--fb-text);
+  border-color: rgba(93, 112, 82, 0.26);
+  background: rgba(93, 112, 82, 0.12);
+  color: var(--primary);
   font-weight: 900;
 }
 
@@ -485,8 +507,8 @@ onMounted(async () => {
   min-height: 2.55rem;
   min-width: 14rem;
   border: 1px solid var(--fb-border);
-  border-radius: 0.65rem;
-  background: var(--fb-panel-soft);
+  border-radius: 999px;
+  background: var(--fb-panel-strong);
   color: var(--fb-subtle);
   padding: 0 0.8rem;
   transition: border-color 200ms ease, background 200ms ease;
@@ -507,15 +529,15 @@ onMounted(async () => {
 }
 
 .feedback-search:focus-within {
-  border-color: rgba(168, 189, 121, 0.42);
-  background: var(--fb-panel);
+  border-color: rgba(93, 112, 82, 0.5);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .feedback-list {
   display: grid;
   overflow: hidden;
   border: 1px solid var(--fb-border);
-  border-radius: 0.75rem;
+  border-radius: 1.55rem;
   background: var(--fb-panel);
   box-shadow: var(--fb-shadow);
 }
@@ -525,7 +547,7 @@ onMounted(async () => {
 .feedback-action-message {
   margin: 0;
   padding: 1rem;
-  border-radius: 0.75rem;
+  border-radius: 1.15rem;
   line-height: 1.6;
 }
 
@@ -540,16 +562,16 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid rgba(235, 117, 109, 0.28);
-  background: rgba(235, 117, 109, 0.1);
+  border: 1px solid rgba(168, 84, 72, 0.2);
+  background: rgba(168, 84, 72, 0.08);
   color: var(--fb-danger);
   font-weight: 850;
 }
 
 .feedback-action-message {
-  border: 1px solid rgba(168, 189, 121, 0.28);
-  background: rgba(168, 189, 121, 0.1);
-  color: var(--fb-accent-strong);
+  border: 1px solid rgba(93, 112, 82, 0.2);
+  background: rgba(93, 112, 82, 0.1);
+  color: var(--primary);
   font-weight: 900;
 }
 
@@ -562,7 +584,7 @@ onMounted(async () => {
 @media (max-width: 520px) {
   .feedback-shell {
     width: min(100% - 1rem, 64rem);
-    padding-top: 1rem;
+    padding-top: 6.25rem;
   }
 
   .feedback-toolbar {

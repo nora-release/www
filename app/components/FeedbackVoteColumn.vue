@@ -74,7 +74,7 @@ const handleVote = (value: 1 | -1) => {
 }
 
 .vote-button:hover:not(:disabled) {
-  background: rgba(168, 189, 121, 0.09);
+  background: rgba(93, 112, 82, 0.1);
   color: var(--fb-accent);
 }
 
@@ -89,12 +89,12 @@ const handleVote = (value: 1 | -1) => {
 
 .vote-active {
   color: var(--fb-accent) !important;
-  background: rgba(168, 189, 121, 0.12) !important;
+  background: rgba(93, 112, 82, 0.12) !important;
 }
 
 .vote-active-down {
   color: var(--fb-danger) !important;
-  background: rgba(235, 117, 109, 0.12) !important;
+  background: rgba(168, 84, 72, 0.12) !important;
 }
 
 .vote-score {

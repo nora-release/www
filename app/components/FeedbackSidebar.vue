@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import type { FeedbackContributor } from '../../server/utils/feedback/types'
+import type { FeedbackAuthor, FeedbackContributor } from '../../server/utils/feedback/types'
+
+type UserWithAdmin = FeedbackAuthor & { isAdmin: boolean }
 
 const props = defineProps<{
+  user: UserWithAdmin | null
   contributors: FeedbackContributor[]
   currentCategory: string
   counts: {
@@ -9,10 +12,12 @@ const props = defineProps<{
     feature: number
     bug: number
   }
+  isSigningOut?: boolean
 }>()
 
 const emit = defineEmits<{
   (event: 'selectCategory', category: string): void
+  (event: 'signOut'): void
 }>()
 
 const categories = [
@@ -31,6 +36,29 @@ const boards = computed(() => {
 
 <template>
   <aside class="feedback-sidebar">
+    <div v-if="user" class="sidebar-account">
+      <img
+        class="sidebar-account-avatar"
+        :src="user.avatarUrl"
+        alt=""
+        width="36"
+        height="36"
+      >
+      <div>
+        <span>Signed in</span>
+        <strong>@{{ user.login }}</strong>
+      </div>
+      <button
+        class="sidebar-signout"
+        type="button"
+        aria-label="Sign out"
+        :disabled="isSigningOut"
+        @click="emit('signOut')"
+      >
+        <span class="i-lucide-log-out size-4" aria-hidden="true" />
+      </button>
+    </div>
+
     <div class="sidebar-section">
       <h3 class="sidebar-heading">Boards</h3>
       <nav aria-label="Feedback boards">
@@ -92,6 +120,57 @@ const boards = computed(() => {
   padding: 0;
 }
 
+.sidebar-account {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--fb-border);
+  border-radius: 1.15rem;
+  background: var(--fb-panel);
+  box-shadow: var(--fb-shadow);
+}
+
+.sidebar-account-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--fb-border);
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.sidebar-account span {
+  display: block;
+  color: var(--fb-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.sidebar-account strong {
+  display: block;
+  color: var(--fb-text);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-signout {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(93, 112, 82, 0.1);
+  color: var(--primary);
+}
+
+.sidebar-signout:hover:not(:disabled) {
+  background: rgba(93, 112, 82, 0.16);
+}
+
 .sidebar-section {
   display: grid;
   gap: 0.75rem;
@@ -100,9 +179,10 @@ const boards = computed(() => {
 
 .sidebar-heading {
   margin: 0;
+  font-family: var(--font-heading);
   color: var(--fb-text);
-  font-size: 0.92rem;
-  font-weight: 850;
+  font-size: 1.04rem;
+  font-weight: 760;
 }
 
 .sidebar-boards,
@@ -134,14 +214,14 @@ const boards = computed(() => {
 }
 
 .sidebar-board:hover {
-  background: var(--fb-panel-soft);
-  color: var(--fb-text);
+  background: rgba(93, 112, 82, 0.08);
+  color: var(--primary);
 }
 
 .sidebar-board-active {
   border-color: var(--fb-border);
   background: var(--fb-panel);
-  color: var(--fb-text);
+  color: var(--primary);
   font-weight: 900;
 }
 

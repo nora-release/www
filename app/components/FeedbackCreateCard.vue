@@ -143,7 +143,7 @@ defineExpose({
 <style scoped>
 .create-card {
   border: 1px solid var(--fb-border);
-  border-radius: 0.75rem;
+  border-radius: 1.6rem 2rem 1.8rem 1.5rem;
   background: var(--fb-panel-strong);
   box-shadow: var(--fb-shadow);
   overflow: hidden;
@@ -166,11 +166,11 @@ defineExpose({
 }
 
 .create-prompt:hover {
-  background: rgba(255, 255, 255, 0.035);
+  background: rgba(93, 112, 82, 0.06);
 }
 
 .create-prompt > span:first-of-type {
-  color: var(--fb-muted);
+  color: var(--primary);
 }
 
 .create-prompt > span:nth-of-type(2) {
@@ -214,16 +214,15 @@ defineExpose({
   height: 2.4rem;
   place-items: center;
   border: 0;
-  border-radius: 0.6rem;
-  background: var(--fb-panel-soft);
-  color: var(--fb-muted);
+  border-radius: 999px;
+  background: rgba(93, 112, 82, 0.1);
+  color: var(--primary);
   cursor: pointer;
   transition: background 220ms ease, transform 220ms ease;
 }
 
 .create-close:hover {
-  background: var(--fb-panel);
-  color: var(--fb-text);
+  background: rgba(93, 112, 82, 0.16);
 }
 
 .create-close:active {
@@ -242,8 +241,8 @@ defineExpose({
 .create-field select {
   width: 100%;
   border: 1px solid var(--fb-border);
-  border-radius: 0.65rem;
-  background: var(--fb-panel-soft);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
   color: var(--fb-text);
   line-height: 1.5;
   outline: 0;
@@ -268,9 +267,9 @@ defineExpose({
 .create-field input:focus,
 .create-field textarea:focus,
 .create-field select:focus {
-  border-color: rgba(168, 189, 121, 0.45);
-  background: var(--fb-panel);
-  box-shadow: 0 0 0 3px rgba(168, 189, 121, 0.12);
+  border-color: rgba(93, 112, 82, 0.72);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 3px rgba(93, 112, 82, 0.16);
 }
 
 .create-actions {
