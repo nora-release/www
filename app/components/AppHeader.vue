@@ -1,19 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { NavItem } from '../data/home'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     navItems: NavItem[]
     downloadHref: string
     brandHref?: string
+    ctaHref?: string
+    ctaLabel?: string
+    ctaIcon?: string
   }>(),
   {
     brandHref: '/',
+    ctaLabel: 'Login',
+    ctaIcon: 'i-lucide-github',
   },
 )
 
 const isMenuOpen = ref(false)
+const route = useRoute()
+const loginHref = computed(() => {
+  return `/api/auth/github?next=${encodeURIComponent(route.fullPath || '/')}`
+})
+const primaryCtaHref = computed(() => props.ctaHref ?? loginHref.value)
 
 const closeMenu = () => {
   isMenuOpen.value = false
@@ -31,9 +41,9 @@ const closeMenu = () => {
         </a>
       </div>
 
-      <a class="nav-cta" :href="downloadHref">
-        Download app
-        <span class="i-lucide-download size-[1.0625rem]" aria-hidden="true" />
+      <a class="nav-cta" :href="primaryCtaHref">
+        {{ ctaLabel }}
+        <span :class="[ctaIcon, 'size-[1.0625rem]']" aria-hidden="true" />
       </a>
 
       <button
@@ -68,11 +78,11 @@ const closeMenu = () => {
       </a>
       <a
         class="mobile-cta"
-        :href="downloadHref"
+        :href="primaryCtaHref"
         @click="closeMenu"
       >
-        Download app
-        <span class="i-lucide-download size-[1.0625rem]" aria-hidden="true" />
+        {{ ctaLabel }}
+        <span :class="[ctaIcon, 'size-[1.0625rem]']" aria-hidden="true" />
       </a>
     </div>
   </header>
