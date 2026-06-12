@@ -1,3 +1,13 @@
+import {
+  deleteCookie,
+  getCookie,
+  getQuery,
+  getRequestURL,
+  getRouterParam,
+  readBody,
+  setCookie,
+} from 'nitro/h3'
+
 type CookieOptions = {
   httpOnly?: boolean
   maxAge?: number
@@ -27,76 +37,47 @@ export const feedbackError = (
 }
 
 export const getRequestUrl = (event: any) => {
-  return new URL(event.url || event.req.url)
+  return getRequestURL(event)
 }
 
 export const getQueryValue = (event: any, name: string) => {
-  return getRequestUrl(event).searchParams.get(name)
+  const value = getQuery(event)[name]
+
+  if (Array.isArray(value)) {
+    return typeof value[0] === 'string' ? value[0] : null
+  }
+
+  return typeof value === 'string' ? value : null
 }
 
 export const getRouterValue = (event: any, name: string) => {
-  return event.context?.params?.[name] ?? event.req?.context?.params?.[name]
+  return (
+    getRouterParam(event, name)
+    ?? event.context?.params?.[name]
+    ?? event.req?.context?.params?.[name]
+  )
 }
 
 export const readJsonBody = async (event: any) => {
-  const text = await event.req.text()
+  const body = await readBody(event)
 
-  if (!text) {
+  if (!body) {
     return {}
   }
 
+  if (typeof body !== 'string') {
+    return body
+  }
+
   try {
-    return JSON.parse(text)
+    return JSON.parse(body)
   } catch {
     throw feedbackError(400, 'Request body must be valid JSON.')
   }
 }
 
 export const getCookieValue = (event: any, name: string) => {
-  const cookieHeader = event.req?.headers.get('cookie') ?? ''
-  const cookies = cookieHeader.split(';')
-
-  for (const cookie of cookies) {
-    const [rawName, ...rawValue] = cookie.trim().split('=')
-
-    if (rawName === name) {
-      return decodeURIComponent(rawValue.join('='))
-    }
-  }
-
-  return undefined
-}
-
-const serializeCookie = (
-  name: string,
-  value: string,
-  options: CookieOptions,
-) => {
-  const parts = [`${name}=${encodeURIComponent(value)}`]
-
-  if (options.maxAge !== undefined) {
-    parts.push(`Max-Age=${options.maxAge}`)
-  }
-
-  if (options.path) {
-    parts.push(`Path=${options.path}`)
-  }
-
-  if (options.httpOnly) {
-    parts.push('HttpOnly')
-  }
-
-  if (options.secure) {
-    parts.push('Secure')
-  }
-
-  if (options.sameSite) {
-    parts.push(
-      `SameSite=${options.sameSite[0].toUpperCase()}${options.sameSite.slice(1)}`,
-    )
-  }
-
-  return parts.join('; ')
+  return getCookie(event, name)
 }
 
 export const setCookieValue = (
@@ -105,7 +86,7 @@ export const setCookieValue = (
   value: string,
   options: CookieOptions,
 ) => {
-  event.res.headers.append('set-cookie', serializeCookie(name, value, options))
+  setCookie(event, name, value, options)
 }
 
 export const clearCookieValue = (
@@ -113,10 +94,9 @@ export const clearCookieValue = (
   name: string,
   options: CookieOptions = {},
 ) => {
-  setCookieValue(event, name, '', {
+  deleteCookie(event, name, {
     path: '/',
     ...options,
-    maxAge: 0,
   })
 }
 

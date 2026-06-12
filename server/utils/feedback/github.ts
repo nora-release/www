@@ -96,14 +96,14 @@ export const createFeedbackIssue = async (
   const responseBody = await response.json().catch(() => null)
 
   if (!response.ok) {
-    throw feedbackError(502, 'GitHub issue creation failed.', responseBody)
+    throw feedbackError(500, 'GitHub issue creation failed.', responseBody)
   }
 
   if (
     typeof responseBody?.number !== 'number' ||
     typeof responseBody?.html_url !== 'string'
   ) {
-    throw feedbackError(502, 'GitHub issue response is incomplete.')
+    throw feedbackError(500, 'GitHub issue response is incomplete.')
   }
 
   return {

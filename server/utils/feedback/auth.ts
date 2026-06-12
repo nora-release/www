@@ -114,10 +114,9 @@ const verifySignedPayload = <T>(token: string | undefined, secret: string) => {
 }
 
 const isSecureRequest = (event: any) => {
-  const forwardedProto = event.req?.headers.get('x-forwarded-proto') ?? ''
   const requestUrl = getRequestUrl(event)
 
-  return forwardedProto.includes('https') || requestUrl.protocol === 'https:'
+  return requestUrl.protocol === 'https:'
 }
 
 const getCookieOptions = (event: unknown) => {
@@ -132,7 +131,7 @@ const getCookieOptions = (event: unknown) => {
 
 const toAuthor = (user: GitHubOAuthUser): FeedbackAuthor => {
   if (!user.id || !user.login) {
-    throw feedbackError(502, 'GitHub user profile is incomplete.')
+    throw feedbackError(500, 'GitHub user profile is incomplete.')
   }
 
   return {

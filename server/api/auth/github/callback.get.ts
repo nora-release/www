@@ -53,7 +53,7 @@ export default (event: any) => withApiResponse(event, async () => {
 
   if (!tokenResponse.ok || !tokenBody.access_token || tokenBody.error) {
     throw feedbackError(
-      502,
+      401,
       tokenBody.error_description || 'GitHub OAuth token exchange failed.',
     )
   }
@@ -69,7 +69,7 @@ export default (event: any) => withApiResponse(event, async () => {
   const githubUser = await userResponse.json()
 
   if (!userResponse.ok) {
-    throw feedbackError(502, 'GitHub user lookup failed.', githubUser)
+    throw feedbackError(401, 'GitHub user lookup failed.', githubUser)
   }
 
   setFeedbackSession(event, githubUser)
