@@ -6,7 +6,6 @@ import {
   getRequestUrl,
   setCookieValue,
 } from './http'
-import { resolveFeedbackUser } from './store'
 import type { FeedbackAuthor, PublicFeedbackUser } from './types'
 
 const SESSION_COOKIE = 'nora_feedback_session'
@@ -152,6 +151,15 @@ const withAdminState = (
     ...user,
     isAdmin: false,
   }
+}
+
+const resolveStoredFeedbackUser = async (
+  event: unknown,
+  author: FeedbackAuthor,
+) => {
+  const store = await import('./store')
+
+  return store.resolveFeedbackUser(event, author)
 }
 
 export const getGitHubOAuthConfig = (event: unknown) => {
@@ -300,7 +308,7 @@ export const requireFeedbackUser = async (event: unknown) => {
     throw feedbackError(401, 'GitHub login is required.')
   }
 
-  return resolveFeedbackUser(event, session.user)
+  return resolveStoredFeedbackUser(event, session.user)
 }
 
 export const resolveFeedbackSessionUser = async (event: unknown) => {
@@ -310,5 +318,5 @@ export const resolveFeedbackSessionUser = async (event: unknown) => {
     return null
   }
 
-  return resolveFeedbackUser(event, session.user)
+  return resolveStoredFeedbackUser(event, session.user)
 }
