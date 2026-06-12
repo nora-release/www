@@ -25,11 +25,13 @@ export const navItems: NavItem[] = [
   { label: 'Features', href: '#features' },
   { label: 'Download', href: '#download' },
   { label: 'FAQ', href: '#faq' },
+  { label: 'Feedback', href: '/feedback' },
 ]
 
 export const footerLinks: NavItem[] = [
   { label: 'Features', href: '#features' },
   { label: 'Download', href: '#download' },
+  { label: 'Feedback', href: '/feedback' },
 ]
 
 export const workModes: WorkMode[] = [

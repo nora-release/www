@@ -2,10 +2,16 @@
 import { ref } from 'vue'
 import type { NavItem } from '../data/home'
 
-defineProps<{
-  navItems: NavItem[]
-  downloadHref: string
-}>()
+withDefaults(
+  defineProps<{
+    navItems: NavItem[]
+    downloadHref: string
+    brandHref?: string
+  }>(),
+  {
+    brandHref: '/',
+  },
+)
 
 const isMenuOpen = ref(false)
 
@@ -17,7 +23,7 @@ const closeMenu = () => {
 <template>
   <header class="nav-wrap">
     <nav class="site-nav" aria-label="Primary navigation">
-      <BrandLink @navigate="closeMenu" />
+      <BrandLink :href="brandHref" @navigate="closeMenu" />
 
       <div class="nav-links" aria-label="Main sections">
         <a v-for="item in navItems" :key="item.href" :href="item.href">
