@@ -1,7 +1,11 @@
 packages:
   - .
 
-minimumReleaseAge: 0
+minimumReleaseAgeExclude:
+  - '@cloudflare/workers-types'
+  - '@electric-sql/pglite'
+  - '@esbuild/*'
+  - esbuild
 
 allowBuilds:
   '@parcel/watcher': true

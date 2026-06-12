@@ -24,7 +24,7 @@ export default (event: any) => withApiResponse(event, () => {
 
   authorizeUrl.searchParams.set('client_id', oauthConfig.clientId)
   authorizeUrl.searchParams.set('redirect_uri', getGitHubOAuthRedirectUrl(event))
-  authorizeUrl.searchParams.set('scope', 'read:user user:email')
+  authorizeUrl.searchParams.set('scope', 'read:user')
   authorizeUrl.searchParams.set('state', state)
 
   return redirectResponse(authorizeUrl.toString(), 302)
