@@ -10,3 +10,10 @@ minimumReleaseAgeExclude:
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
+
+# Temporary: httpxy uses `input instanceof Request` which fails for cross-realm
+# Request objects passed by Nitro 3's env-runner. Remove once upstream supports
+# duck-typing for Request detection.
+# See: https://github.com/unjs/httpxy
+patchedDependencies:
+  httpxy@0.5.3: patches/httpxy@0.5.3.patch
