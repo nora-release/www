@@ -1,4 +1,4 @@
-import { clearUserSession, getUserSession, setUserSession } from '#imports'
+import { useSession } from 'nitro/h3'
 import {
   clearCookieValue,
   feedbackError,
@@ -10,6 +10,25 @@ import type { FeedbackAuthor, PublicFeedbackUser } from './types'
 
 const RETURN_TO_COOKIE = 'nora_feedback_return_to'
 const RETURN_TO_TTL_SECONDS = 60 * 10
+const SESSION_NAME = 'nuxt-session'
+
+const getSessionPassword = () => {
+  return (
+    process.env.NUXT_SESSION_PASSWORD
+    || process.env.NORA_SESSION_SECRET
+    || ''
+  )
+}
+
+const getSessionConfig = () => {
+  return {
+    name: SESSION_NAME,
+    password: getSessionPassword(),
+    cookie: {
+      sameSite: 'lax' as const,
+    },
+  }
+}
 
 type FeedbackRuntimeConfig = {
   siteUrl?: string
@@ -185,8 +204,9 @@ export const setFeedbackSession = async (
   githubUser: GitHubOAuthUser,
 ) => {
   const user = await resolveStoredFeedbackUser(event, toAuthor(githubUser))
+  const session = await useSession(asSessionEvent(event), getSessionConfig())
 
-  await setUserSession(asSessionEvent(event), {
+  await session.update({
     user,
     loggedInAt: new Date().toISOString(),
   })
@@ -207,12 +227,13 @@ export const setFeedbackSession = async (
 }
 
 export const clearFeedbackSession = async (event: unknown) => {
-  await clearUserSession(asSessionEvent(event))
+  const session = await useSession(asSessionEvent(event), getSessionConfig())
+  await session.clear()
 }
 
 export const getFeedbackSession = async (event: unknown) => {
-  const session = await getUserSession(asSessionEvent(event))
-  const user = session.user as PublicFeedbackUser | undefined
+  const session = await useSession(asSessionEvent(event), getSessionConfig())
+  const user = session.data.user as PublicFeedbackUser | undefined
 
   if (!user?.id || !user.login) {
     return null
