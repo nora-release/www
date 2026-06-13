@@ -133,12 +133,19 @@ summary:focus-visible {
 
 .home-page {
   position: relative;
+  display: flex;
   min-height: 100vh;
+  flex-direction: column;
   overflow-x: hidden;
   background:
     radial-gradient(circle at 12% 7%, rgba(230, 220, 205, 0.78), transparent 26rem),
     radial-gradient(circle at 88% 12%, rgba(193, 140, 93, 0.16), transparent 22rem),
     var(--background);
+}
+
+.home-page > main,
+.feedback-page > main {
+  flex: 1 0 auto;
 }
 
 .home-page::before {

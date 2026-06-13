@@ -13,7 +13,9 @@
   --fb-feature: var(--secondary);
   --fb-danger: var(--destructive);
   --fb-shadow: var(--soft-shadow);
+  display: flex;
   min-height: 100vh;
+  flex-direction: column;
   overflow-x: hidden;
   background:
     radial-gradient(circle at 12% 7%, rgba(230, 220, 205, 0.78), transparent 26rem),
