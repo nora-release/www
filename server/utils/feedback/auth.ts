@@ -192,9 +192,14 @@ export const setFeedbackSession = async (
   })
 
   const eventRes = (event as any).res
-  const setCookies = eventRes?.headers?.getSetCookie
-    ? eventRes.headers.getSetCookie()
-    : [eventRes?.headers?.get('set-cookie')]
+  const eventHeaders = eventRes?.headers
+  const setCookies = eventHeaders
+    ? typeof eventHeaders.getSetCookie === 'function'
+      ? eventHeaders.getSetCookie()
+      : eventHeaders.get('set-cookie')
+        ? [eventHeaders.get('set-cookie')]
+        : []
+    : []
 
   console.log('[setFeedbackSession] user set, cookies:', setCookies)
 
