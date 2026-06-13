@@ -2,33 +2,19 @@
 import { footerLinks } from '../../data/home'
 import type { FeedbackCategory, FeedbackContributor, FeedbackItem } from '../../server/utils/feedback/types'
 
-type FeedbackUser = {
-  id: number
-  login: string
-  name: string
-  avatarUrl: string
-  htmlUrl: string
-  isAdmin: boolean
-}
-
-type SessionResponse = {
-  user: FeedbackUser | null
-  auth: {
-    githubConfigured: boolean
-  }
-  feedback: {
-    issuePromotionConfigured: boolean
-    issueRepo: string
-  }
-}
-
-const session = ref<SessionResponse | null>(null)
+const {
+  session,
+  user,
+  isLoadingSession,
+  sessionError,
+  loadSession,
+  logout: signOut,
+} = useFeedbackSession()
 const items = ref<FeedbackItem[]>([])
 const contributors = ref<FeedbackContributor[]>([])
 const category = ref<'all' | FeedbackCategory>('all')
 const sort = ref<'new' | 'top' | 'trending'>('new')
 const search = ref('')
-const isLoadingSession = ref(true)
 const isLoadingItems = ref(false)
 const isLoadingContributors = ref(false)
 const isCreating = ref(false)
@@ -39,7 +25,6 @@ const actionMessage = ref('')
 
 const createCardRef = ref<InstanceType<typeof FeedbackCreateCard> | null>(null)
 
-const user = computed(() => session.value?.user ?? null)
 const boardCounts = computed(() => {
   return {
     all: items.value.length,
@@ -62,20 +47,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     || fetchError.message
     || fallback
   )
-}
-
-const loadSession = async () => {
-  isLoadingSession.value = true
-  pageError.value = ''
-
-  try {
-    session.value = await $fetch<SessionResponse>('/api/auth/session')
-  } catch (error) {
-    session.value = null
-    pageError.value = getErrorMessage(error, 'Session could not be loaded.')
-  } finally {
-    isLoadingSession.value = false
-  }
 }
 
 const loadItems = async () => {
@@ -192,8 +163,7 @@ const handleSignOut = async () => {
   isLoggingOut.value = true
 
   try {
-    await $fetch('/api/auth/logout', { method: 'POST' })
-    await loadSession()
+    await signOut()
     await loadItems()
   } finally {
     isLoggingOut.value = false
@@ -250,7 +220,10 @@ useHead({
 })
 
 onMounted(async () => {
-  await loadSession()
+  await loadSession({ force: true })
+  if (sessionError.value) {
+    pageError.value = sessionError.value
+  }
   await Promise.all([loadItems(), loadContributors()])
 })
 </script>

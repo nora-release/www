@@ -4,6 +4,11 @@ import { navItems } from './data/home'
 
 const route = useRoute()
 const brandHref = computed(() => route.path === '/' ? '#top' : '/')
+const {
+  user,
+  isLoadingSession,
+  loadSession,
+} = useFeedbackSession()
 
 useHead({
   htmlAttrs: {
@@ -45,6 +50,9 @@ useHead({
   ],
 })
 
+onMounted(() => {
+  void loadSession()
+})
 </script>
 
 <template>
@@ -52,6 +60,8 @@ useHead({
   <AppHeader
     :nav-items="navItems"
     :brand-href="brandHref"
+    :user="user"
+    :is-auth-loading="isLoadingSession"
   />
   <NuxtPage />
 </template>
@@ -237,7 +247,9 @@ main {
 }
 
 .nav-cta,
+.nav-account,
 .mobile-cta,
+.mobile-account,
 .button {
   display: inline-flex;
   min-height: 3rem;
@@ -262,16 +274,54 @@ main {
   box-shadow: var(--soft-shadow);
 }
 
+.nav-account {
+  display: none;
+  min-width: 3rem;
+  max-width: 12rem;
+  padding: 0.28rem 0.95rem 0.28rem 0.32rem;
+  border: 1px solid rgba(93, 112, 82, 0.16);
+  background: rgba(93, 112, 82, 0.1);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+.nav-account span,
+.mobile-account span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-account-avatar {
+  width: 2.125rem;
+  height: 2.125rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(93, 112, 82, 0.18);
+  border-radius: 999px;
+  object-fit: cover;
+  background: var(--paper);
+}
+
+.nav-account-loading {
+  width: 3rem;
+  padding: 0;
+}
+
 .nav-cta:hover,
+.nav-account:hover,
 .button-primary:hover,
-.mobile-cta:hover {
+.mobile-cta:hover,
+.mobile-account:hover {
   transform: scale(1.045);
   box-shadow: 0 12px 28px -12px rgba(93, 112, 82, 0.5);
 }
 
 .nav-cta:active,
+.nav-account:active,
 .button:active,
 .mobile-cta:active,
+.mobile-account:active,
 .menu-button:active {
   transform: scale(0.96);
 }
@@ -316,6 +366,17 @@ main {
   margin-top: 0.25rem;
   background: var(--primary);
   color: var(--primary-foreground);
+}
+
+.mobile-panel .mobile-account {
+  margin-top: 0.25rem;
+  border: 1px solid rgba(93, 112, 82, 0.16);
+  background: rgba(93, 112, 82, 0.1);
+  color: var(--primary);
+}
+
+.mobile-panel .mobile-account-loading {
+  justify-content: center;
 }
 
 .hero {
@@ -894,7 +955,8 @@ h1 {
 
 @media (min-width: 900px) {
   .nav-links,
-  .nav-cta {
+  .nav-cta,
+  .nav-account {
     display: flex;
   }
 
