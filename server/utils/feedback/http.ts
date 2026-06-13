@@ -8,6 +8,10 @@ import {
   setCookie,
 } from 'nitro/h3'
 
+export const isCloudflareWorkers = () => {
+  return typeof caches !== 'undefined' && typeof (globalThis as any).WebSocketPair !== 'undefined'
+}
+
 type CookieOptions = {
   httpOnly?: boolean
   maxAge?: number
@@ -111,6 +115,21 @@ export const jsonResponse = (
   })
 }
 
+export const getSetCookieHeaders = (event: any): string[] => {
+  const eventHeaders = event.res?.headers
+
+  if (!eventHeaders) {
+    return []
+  }
+
+  if (typeof eventHeaders.getSetCookie === 'function') {
+    return eventHeaders.getSetCookie()
+  }
+
+  const setCookie = eventHeaders.get('set-cookie')
+  return setCookie ? [setCookie] : []
+}
+
 export const redirectResponse = (location: string, status = 302) => {
   return new Response(null, {
     status,
@@ -121,23 +140,8 @@ export const redirectResponse = (location: string, status = 302) => {
 }
 
 export const mergeEventHeaders = (event: any, response: Response) => {
-  const eventHeaders = event.res?.headers
-
-  if (!eventHeaders) {
-    return response
-  }
-
-  const setCookies =
-    typeof eventHeaders.getSetCookie === 'function'
-      ? eventHeaders.getSetCookie()
-      : eventHeaders.get('set-cookie')
-        ? [eventHeaders.get('set-cookie')]
-        : []
-
-  for (const cookie of setCookies) {
-    if (cookie) {
-      response.headers.append('set-cookie', cookie)
-    }
+  for (const cookie of getSetCookieHeaders(event)) {
+    response.headers.append('set-cookie', cookie)
   }
 
   return response

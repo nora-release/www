@@ -1,9 +1,5 @@
 import { useRuntimeConfig } from '../utils/nitro-imports-compat'
-import { withApiResponse } from '../utils/feedback/http'
-
-const isCloudflareWorkers = () => {
-  return typeof caches !== 'undefined' && typeof (globalThis as any).WebSocketPair !== 'undefined'
-}
+import { isCloudflareWorkers, withApiResponse } from '../utils/feedback/http'
 
 export default (event: any) => withApiResponse(event, () => {
   const config = useRuntimeConfig()
@@ -16,14 +12,6 @@ export default (event: any) => withApiResponse(event, () => {
   const oauthConfigured = Boolean(
     config.oauth?.github?.clientId && config.oauth?.github?.clientSecret,
   )
-
-  console.log('[Health Probe]', {
-    timestamp: new Date().toISOString(),
-    runtime,
-    sessionConfigured,
-    oauthConfigured,
-    nodeEnv: process.env.NODE_ENV,
-  })
 
   return {
     ok: true,

@@ -4,6 +4,7 @@ import {
   feedbackError,
   getCookieValue,
   getRequestUrl,
+  getSetCookieHeaders,
   setCookieValue,
 } from './http'
 import type { FeedbackAuthor, PublicFeedbackUser } from './types'
@@ -45,18 +46,6 @@ type GitHubOAuthUser = {
   name?: string | null
   avatar_url?: string
   html_url?: string
-}
-
-const asSessionEvent = (event: unknown) => {
-  if (event && typeof event === 'object') {
-    // Nuxt 5 nightly currently passes a session-capable event without h3's marker.
-    Object.defineProperty(event, '__is_event__', {
-      configurable: true,
-      value: true,
-    })
-  }
-
-  return event as any
 }
 
 const normalizeEnvValue = (value: string | undefined) => {
@@ -204,35 +193,23 @@ export const setFeedbackSession = async (
   githubUser: GitHubOAuthUser,
 ) => {
   const user = await resolveStoredFeedbackUser(event, toAuthor(githubUser))
-  const session = await useSession(asSessionEvent(event), getSessionConfig())
+  const session = await useSession(event as any, getSessionConfig())
 
   await session.update({
     user,
     loggedInAt: new Date().toISOString(),
   })
 
-  const eventRes = (event as any).res
-  const eventHeaders = eventRes?.headers
-  const setCookies = eventHeaders
-    ? typeof eventHeaders.getSetCookie === 'function'
-      ? eventHeaders.getSetCookie()
-      : eventHeaders.get('set-cookie')
-        ? [eventHeaders.get('set-cookie')]
-        : []
-    : []
-
-  console.log('[setFeedbackSession] user set, cookies:', setCookies)
-
   return user
 }
 
 export const clearFeedbackSession = async (event: unknown) => {
-  const session = await useSession(asSessionEvent(event), getSessionConfig())
+  const session = await useSession(event as any, getSessionConfig())
   await session.clear()
 }
 
 export const getFeedbackSession = async (event: unknown) => {
-  const session = await useSession(asSessionEvent(event), getSessionConfig())
+  const session = await useSession(event as any, getSessionConfig())
   const user = session.data.user as PublicFeedbackUser | undefined
 
   if (!user?.id || !user.login) {
