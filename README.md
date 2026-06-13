@@ -13,6 +13,7 @@ Seamlessly switch between OpenAI, Anthropic, Google Gemini, and custom providers
 
 The `/feedback` page shows a public feedback community. GitHub OAuth login is
 required to create feedback, reply, manage admins, or promote feedback to issues.
+Set the GitHub OAuth App callback URL to `<your-domain>/auth/github`.
 
 Configure these environment variables before enabling it:
 
@@ -20,8 +21,9 @@ Configure these environment variables before enabling it:
 | --- | --- |
 | `NORA_SITE_URL` | Public site origin used for the GitHub OAuth callback. |
 | `NUXT_SESSION_PASSWORD` | Long random string used by `nuxt-auth-utils` for login sessions. `NORA_SESSION_SECRET` is also accepted as the same password. |
-| `GITHUB_CLIENT_ID` | GitHub OAuth app client id. |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret. |
+| `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub OAuth app client id. `GITHUB_CLIENT_ID` is also accepted. |
+| `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret. `GITHUB_CLIENT_SECRET` is also accepted. |
+| `NUXT_OAUTH_GITHUB_REDIRECT_URL` | Optional explicit callback URL. Use `https://nora.elonehoo.me/auth/github` in production. |
 | `DATABASE_URL` | PostgreSQL connection string used by NuxtHub DB. |
 | `NORA_FEEDBACK_ADMINS` | Initial comma-separated GitHub usernames seeded into the admin table. |
 | `NORA_FEEDBACK_GITHUB_REPO` | Private repo in `owner/repo` format for promoted issues. |

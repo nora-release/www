@@ -17,7 +17,7 @@ const category = ref<FeedbackCategory>('feature')
 const isSubmitting = ref(false)
 
 const loginHref = computed(() => {
-  return `/api/auth/github?next=${encodeURIComponent('/feedback')}`
+  return `/auth/github?next=${encodeURIComponent('/feedback')}`
 })
 
 const canSubmit = computed(() => {

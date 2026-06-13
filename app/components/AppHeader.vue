@@ -29,7 +29,7 @@ const props = withDefaults(
 const isMenuOpen = ref(false)
 const route = useRoute()
 const loginHref = computed(() => {
-  return `/api/auth/github?next=${encodeURIComponent(route.fullPath || '/')}`
+  return `/auth/github?next=${encodeURIComponent(route.fullPath || '/')}`
 })
 const primaryCtaHref = computed(() => props.ctaHref ?? loginHref.value)
 

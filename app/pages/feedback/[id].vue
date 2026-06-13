@@ -27,7 +27,7 @@ const categoryLabel = computed(() => {
 })
 
 const loginHref = computed(() => {
-  return `/api/auth/github?next=${encodeURIComponent(`/feedback/${id.value}`)}`
+  return `/auth/github?next=${encodeURIComponent(`/feedback/${id.value}`)}`
 })
 
 const formatDate = (value: string) => {

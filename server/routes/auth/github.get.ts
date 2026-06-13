@@ -1,11 +1,17 @@
 import { defineOAuthGitHubEventHandler } from '#imports'
-import { sendRedirect } from 'nitro/h3'
+import { getQuery, sendRedirect } from 'nitro/h3'
 import {
   consumeFeedbackOAuthReturnTo,
   getGitHubOAuthConfig,
   getGitHubOAuthRedirectUrl,
+  sanitizeReturnTo,
+  setFeedbackOAuthReturnTo,
   setFeedbackSession,
-} from '../../../utils/feedback/auth'
+} from '../../utils/feedback/auth'
+
+const GITHUB_AUTHORIZATION_URL = 'https://github.com/login/oauth/authorize'
+const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
+const GITHUB_API_URL = 'https://api.github.com'
 
 const toErrorMessage = (error: unknown) => {
   const oauthError = error as {
@@ -56,16 +62,25 @@ const oauthErrorResponse = (
 }
 
 export default async (event: any) => {
+  const query = getQuery(event)
   const oauthConfig = getGitHubOAuthConfig(event)
   const redirectURL = getGitHubOAuthRedirectUrl(event)
+
+  if (!query.code && !query.error) {
+    setFeedbackOAuthReturnTo(
+      event,
+      sanitizeReturnTo(typeof query.next === 'string' ? query.next : undefined),
+    )
+  }
+
   const handler = defineOAuthGitHubEventHandler({
     config: {
       clientId: oauthConfig.clientId,
       clientSecret: oauthConfig.clientSecret,
       redirectURL,
-      authorizationURL: 'https://github.com/login/oauth/authorize',
-      tokenURL: 'https://github.com/login/oauth/access_token',
-      apiURL: 'https://api.github.com',
+      authorizationURL: GITHUB_AUTHORIZATION_URL,
+      tokenURL: GITHUB_TOKEN_URL,
+      apiURL: GITHUB_API_URL,
       scope: ['read:user'],
       authorizationParams: {
         allow_signup: 'true',

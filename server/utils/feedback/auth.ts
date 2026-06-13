@@ -16,6 +16,7 @@ type FeedbackRuntimeConfig = {
   github?: {
     clientId?: string
     clientSecret?: string
+    redirectURL?: string
   }
 }
 
@@ -56,8 +57,13 @@ const getFeedbackConfig = (_event: unknown): FeedbackRuntimeConfig => {
   return {
     siteUrl: normalizeEnvValue(process.env.NORA_SITE_URL),
     github: {
-      clientId: normalizeEnvValue(process.env.GITHUB_CLIENT_ID),
-      clientSecret: normalizeEnvValue(process.env.GITHUB_CLIENT_SECRET),
+      clientId: normalizeEnvValue(
+        process.env.NUXT_OAUTH_GITHUB_CLIENT_ID || process.env.GITHUB_CLIENT_ID,
+      ),
+      clientSecret: normalizeEnvValue(
+        process.env.NUXT_OAUTH_GITHUB_CLIENT_SECRET || process.env.GITHUB_CLIENT_SECRET,
+      ),
+      redirectURL: normalizeEnvValue(process.env.NUXT_OAUTH_GITHUB_REDIRECT_URL),
     },
   }
 }
@@ -116,11 +122,17 @@ export const getGitHubOAuthConfig = (event: unknown) => {
 export const getGitHubOAuthRedirectUrl = (event: unknown) => {
   const config = getFeedbackConfig(event)
   const requestUrl = getRequestUrl(event)
+  const configuredRedirectURL = config.github?.redirectURL
+
+  if (configuredRedirectURL) {
+    return configuredRedirectURL
+  }
+
   const origin =
     config.siteUrl?.replace(/\/+$/, '') ||
     `${requestUrl.protocol}//${requestUrl.host}`
 
-  return `${origin}/api/auth/github/callback`
+  return `${origin}/auth/github`
 }
 
 export const sanitizeReturnTo = (value: unknown, fallback = '/feedback') => {
