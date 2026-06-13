@@ -10,6 +10,8 @@ export default (event: any) => withApiResponse(event, async () => {
   const oauthConfig = getGitHubOAuthConfig(event)
   const issueConfig = getIssuePromotionConfig(event)
 
+  console.log('[Auth Session] resolved user:', user?.login ?? null)
+
   return {
     user,
     auth: {

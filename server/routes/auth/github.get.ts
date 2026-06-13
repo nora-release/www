@@ -66,6 +66,13 @@ export default async (event: any) => {
   const oauthConfig = getGitHubOAuthConfig(event)
   const redirectURL = getGitHubOAuthRedirectUrl(event)
 
+  console.log('[GitHub OAuth] request', {
+    hasCode: Boolean(query.code),
+    hasError: Boolean(query.error),
+    redirectURL,
+    configured: oauthConfig.configured,
+  })
+
   if (!query.code && !query.error) {
     setFeedbackOAuthReturnTo(
       event,
