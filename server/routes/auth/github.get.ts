@@ -92,6 +92,7 @@ export default async (event: any) => {
       return sendRedirect(event, consumeFeedbackOAuthReturnTo(event), 302)
     },
     onError(_event, error) {
+      console.error('[GitHub OAuth] handler error:', error)
       return oauthErrorResponse(error, redirectURL)
     },
   })
@@ -99,6 +100,7 @@ export default async (event: any) => {
   try {
     return await handler(event)
   } catch (error) {
+    console.error('[GitHub OAuth] unexpected error:', error)
     return oauthErrorResponse(error, redirectURL)
   }
 }
