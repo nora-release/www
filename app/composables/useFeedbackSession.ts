@@ -66,6 +66,7 @@ export const useFeedbackSession = () => {
         error,
         'Session could not be loaded.',
       )
+      console.error('[FeedbackSession] loadSession failed:', error)
 
       return null
     } finally {

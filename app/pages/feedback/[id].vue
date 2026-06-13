@@ -295,14 +295,15 @@ onMounted(async () => {
           <div v-else class="feedback-locked-panel">
             <span class="i-lucide-lock-keyhole size-5" aria-hidden="true" />
             <p>Sign in with GitHub to join this conversation.</p>
-            <a
+            <NuxtLink
               v-if="session?.auth.githubConfigured"
               class="button button-outline"
-              :href="loginHref"
+              :to="loginHref"
+              external
             >
               Sign in
               <span class="i-lucide-github size-5" aria-hidden="true" />
-            </a>
+            </NuxtLink>
           </div>
 
           <div v-if="user?.isAdmin" class="feedback-admin-bar">

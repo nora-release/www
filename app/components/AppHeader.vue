@@ -73,10 +73,15 @@ const closeMenu = () => {
         <span class="i-lucide-loader-circle size-[1.0625rem]" aria-hidden="true" />
       </span>
 
-      <a v-else class="nav-cta" :href="primaryCtaHref">
+      <NuxtLink
+        v-else
+        class="nav-cta"
+        :to="primaryCtaHref"
+        external
+      >
         {{ ctaLabel }}
         <span :class="[ctaIcon, 'size-[1.0625rem]']" aria-hidden="true" />
-      </a>
+      </NuxtLink>
 
       <button
         class="menu-button"
@@ -108,15 +113,16 @@ const closeMenu = () => {
       >
         {{ item.label }}
       </a>
-      <a
+      <NuxtLink
         v-if="!user && !isAuthLoading"
         class="mobile-cta"
-        :href="primaryCtaHref"
+        :to="primaryCtaHref"
+        external
         @click="closeMenu"
       >
         {{ ctaLabel }}
         <span :class="[ctaIcon, 'size-[1.0625rem]']" aria-hidden="true" />
-      </a>
+      </NuxtLink>
       <span
         v-else-if="isAuthLoading"
         class="mobile-account mobile-account-loading"

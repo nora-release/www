@@ -53,15 +53,16 @@ defineExpose({
 
 <template>
   <div class="create-card">
-    <a
+    <NuxtLink
       v-if="!canPost && githubConfigured"
       class="create-prompt"
-      :href="loginHref"
+      :to="loginHref"
+      external
     >
       <span class="i-lucide-pen-line size-5" aria-hidden="true" />
       <span>Have something to say?</span>
       <span class="create-prompt-hint">Sign in with GitHub to create a post or reply.</span>
-    </a>
+    </NuxtLink>
 
     <div
       v-else-if="!canPost"
