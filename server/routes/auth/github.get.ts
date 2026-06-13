@@ -13,6 +13,10 @@ const GITHUB_AUTHORIZATION_URL = 'https://github.com/login/oauth/authorize'
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
 const GITHUB_API_URL = 'https://api.github.com'
 
+const isCloudflareWorkers = () => {
+  return typeof caches !== 'undefined' && typeof (globalThis as any).WebSocketPair !== 'undefined'
+}
+
 const toErrorMessage = (error: unknown) => {
   const oauthError = error as {
     message?: unknown
@@ -65,12 +69,19 @@ export default async (event: any) => {
   const query = getQuery(event)
   const oauthConfig = getGitHubOAuthConfig(event)
   const redirectURL = getGitHubOAuthRedirectUrl(event)
+  const runtime = isCloudflareWorkers() ? 'cloudflare-workers' : 'node'
 
   console.log('[GitHub OAuth] request', {
+    runtime,
+    method: event.method,
+    url: event.path,
     hasCode: Boolean(query.code),
     hasError: Boolean(query.error),
     redirectURL,
     configured: oauthConfig.configured,
+    hasSessionPassword: Boolean(
+      process.env.NUXT_SESSION_PASSWORD || process.env.NORA_SESSION_SECRET,
+    ),
   })
 
   if (!query.code && !query.error) {
@@ -94,9 +105,12 @@ export default async (event: any) => {
       },
     },
     async onSuccess(event, { user }) {
-      await setFeedbackSession(event, user)
+      console.log('[GitHub OAuth] onSuccess', { login: user?.login, id: user?.id })
+      const sessionUser = await setFeedbackSession(event, user)
+      const returnTo = consumeFeedbackOAuthReturnTo(event)
+      console.log('[GitHub OAuth] session set, redirecting to', returnTo)
 
-      return sendRedirect(event, consumeFeedbackOAuthReturnTo(event), 302)
+      return sendRedirect(event, returnTo, 302)
     },
     onError(_event, error) {
       console.error('[GitHub OAuth] handler error:', error)
