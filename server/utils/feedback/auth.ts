@@ -191,6 +191,13 @@ export const setFeedbackSession = async (
     loggedInAt: new Date().toISOString(),
   })
 
+  const eventRes = (event as any).res
+  const setCookies = eventRes?.headers?.getSetCookie
+    ? eventRes.headers.getSetCookie()
+    : [eventRes?.headers?.get('set-cookie')]
+
+  console.log('[setFeedbackSession] user set, cookies:', setCookies)
+
   return user
 }
 
