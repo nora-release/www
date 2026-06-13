@@ -14,9 +14,23 @@ import {
 
 type GitHubTokenResponse = {
   access_token?: string
-  error?: string
-  error_description?: string
-  error_uri?: string
+  error?: unknown
+  error_description?: unknown
+  error_uri?: unknown
+  message?: unknown
+  documentation_url?: unknown
+}
+
+const toMessage = (value: unknown) => {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+const maskClientId = (clientId: string) => {
+  if (clientId.length <= 10) {
+    return clientId ? `${clientId.slice(0, 2)}...` : ''
+  }
+
+  return `${clientId.slice(0, 6)}...${clientId.slice(-4)}`
 }
 
 export default (event: any) => withApiResponse(event, async () => {
@@ -65,19 +79,32 @@ export default (event: any) => withApiResponse(event, async () => {
     body: tokenRequestBody.toString(),
   })
   const tokenBody = (await tokenResponse.json().catch(() => ({}))) as GitHubTokenResponse
+  const providerError =
+    toMessage(tokenBody.error) ||
+    toMessage(tokenBody.message)
+  const providerDescription = toMessage(tokenBody.error_description)
+  const providerErrorUri =
+    toMessage(tokenBody.error_uri) ||
+    toMessage(tokenBody.documentation_url)
+  const isMissingOAuthApp =
+    tokenResponse.status === 404 ||
+    providerError?.toLowerCase() === 'not found'
 
   if (!tokenResponse.ok || !tokenBody.access_token || tokenBody.error) {
     throw feedbackError(
       401,
-      tokenBody.error_description ||
-        tokenBody.error ||
-        'GitHub OAuth token exchange failed.',
+      isMissingOAuthApp
+        ? 'GitHub OAuth App was not found. Check GITHUB_CLIENT_ID in Zeabur.'
+        : providerDescription ||
+          providerError ||
+          'GitHub OAuth token exchange failed.',
       {
         providerStatus: tokenResponse.status,
-        providerError: tokenBody.error,
-        providerDescription: tokenBody.error_description,
-        providerErrorUri: tokenBody.error_uri,
+        providerError,
+        providerDescription,
+        providerErrorUri,
         redirectUri,
+        clientId: maskClientId(oauthConfig.clientId),
       },
     )
   }
