@@ -120,7 +120,7 @@ export const redirectResponse = (location: string, status = 302) => {
   })
 }
 
-const mergeEventHeaders = (event: any, response: Response) => {
+export const mergeEventHeaders = (event: any, response: Response) => {
   const eventHeaders = event.res?.headers
 
   if (!eventHeaders) {

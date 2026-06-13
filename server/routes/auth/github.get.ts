@@ -8,6 +8,7 @@ import {
   setFeedbackOAuthReturnTo,
   setFeedbackSession,
 } from '../../utils/feedback/auth'
+import { mergeEventHeaders } from '../../utils/feedback/http'
 
 const GITHUB_AUTHORIZATION_URL = 'https://github.com/login/oauth/authorize'
 const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
@@ -110,7 +111,9 @@ export default async (event: any) => {
       const returnTo = consumeFeedbackOAuthReturnTo(event)
       console.log('[GitHub OAuth] session set, redirecting to', returnTo)
 
-      return sendRedirect(event, returnTo, 302)
+      // h3 v2 sendRedirect ignores event.res headers, so merge cookies manually.
+      const redirectResponse = sendRedirect(event, returnTo, 302)
+      return mergeEventHeaders(event, redirectResponse)
     },
     onError(_event, error) {
       console.error('[GitHub OAuth] handler error:', error)
