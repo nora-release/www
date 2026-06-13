@@ -13,6 +13,7 @@ const focusRing =
 export default defineConfig({
   safelist: [
     'i-lucide-arrow-left',
+    'i-lucide-arrow-right',
     'i-lucide-check',
     'i-lucide-chevron-down',
     'i-lucide-chevron-up',

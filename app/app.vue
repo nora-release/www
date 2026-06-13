@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { navItems } from './data/home'
 
 const route = useRoute()
+const isHome = computed(() => route.path === '/')
 const brandHref = computed(() => route.path === '/' ? '#top' : '/')
 const {
   user,
@@ -34,7 +35,7 @@ useHead({
     },
     {
       rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600..800,70..100&family=Nunito:wght@400;500;600;700;800&display=swap',
+      href: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600..800,70..100&family=Geist:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap',
     },
     {
       rel: 'icon',
@@ -58,6 +59,7 @@ onMounted(() => {
 <template>
   <NuxtRouteAnnouncer />
   <AppHeader
+    v-if="!isHome"
     :nav-items="navItems"
     :brand-href="brandHref"
     :user="user"
