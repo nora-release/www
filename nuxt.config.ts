@@ -12,10 +12,15 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     siteUrl: process.env.NORA_SITE_URL || '',
-    sessionSecret: process.env.NORA_SESSION_SECRET || '',
-    githubOAuth: {
-      clientId: process.env.GITHUB_CLIENT_ID || '',
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+    session: {
+      password: process.env.NUXT_SESSION_PASSWORD || process.env.NORA_SESSION_SECRET || '',
+    },
+    oauth: {
+      github: {
+        clientId: process.env.GITHUB_CLIENT_ID || '',
+        clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+        redirectURL: process.env.NUXT_OAUTH_GITHUB_REDIRECT_URL || '',
+      },
     },
     feedback: {
       githubRepo: process.env.NORA_FEEDBACK_GITHUB_REPO || '',
@@ -26,6 +31,9 @@ export default defineNuxtConfig({
     db: 'postgresql',
   },
   nitro: {
+    alias: {
+      'nitropack/runtime': nitroImportsCompatPath,
+    },
     imports: {
       imports: [
         {
@@ -41,6 +49,7 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxthub/core',
+    'nuxt-auth-utils',
     '@vueuse/nuxt',
     '@unocss/nuxt',
   ]

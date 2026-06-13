@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { clearUserSession, getUserSession, setUserSession } from '#imports'
 import {
   clearCookieValue,
   feedbackError,
@@ -8,29 +8,12 @@ import {
 } from './http'
 import type { FeedbackAuthor, PublicFeedbackUser } from './types'
 
-const SESSION_COOKIE = 'nora_feedback_session'
-const OAUTH_STATE_COOKIE = 'nora_feedback_oauth_state'
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
-const OAUTH_STATE_TTL_SECONDS = 60 * 10
-
-type SessionCookiePayload = {
-  version: 1
-  user: FeedbackAuthor
-  issuedAt: number
-  expiresAt: number
-}
-
-type OAuthStatePayload = {
-  version: 1
-  state: string
-  returnTo: string
-  createdAt: number
-}
+const RETURN_TO_COOKIE = 'nora_feedback_return_to'
+const RETURN_TO_TTL_SECONDS = 60 * 10
 
 type FeedbackRuntimeConfig = {
   siteUrl?: string
-  sessionSecret?: string
-  githubOAuth?: {
+  github?: {
     clientId?: string
     clientSecret?: string
   }
@@ -42,6 +25,18 @@ type GitHubOAuthUser = {
   name?: string | null
   avatar_url?: string
   html_url?: string
+}
+
+const asSessionEvent = (event: unknown) => {
+  if (event && typeof event === 'object') {
+    // Nuxt 5 nightly currently passes a session-capable event without h3's marker.
+    Object.defineProperty(event, '__is_event__', {
+      configurable: true,
+      value: true,
+    })
+  }
+
+  return event as any
 }
 
 const normalizeEnvValue = (value: string | undefined) => {
@@ -60,69 +55,10 @@ const normalizeEnvValue = (value: string | undefined) => {
 const getFeedbackConfig = (_event: unknown): FeedbackRuntimeConfig => {
   return {
     siteUrl: normalizeEnvValue(process.env.NORA_SITE_URL),
-    sessionSecret: normalizeEnvValue(process.env.NORA_SESSION_SECRET),
-    githubOAuth: {
+    github: {
       clientId: normalizeEnvValue(process.env.GITHUB_CLIENT_ID),
       clientSecret: normalizeEnvValue(process.env.GITHUB_CLIENT_SECRET),
     },
-  }
-}
-
-const getSessionSecret = (event: unknown) => {
-  const config = getFeedbackConfig(event)
-
-  return (
-    config.sessionSecret ||
-    config.githubOAuth?.clientSecret ||
-    'nora-www-local-session-secret'
-  )
-}
-
-const encodeBase64Url = (value: string) => {
-  return Buffer.from(value).toString('base64url')
-}
-
-const decodeBase64Url = (value: string) => {
-  return Buffer.from(value, 'base64url').toString('utf8')
-}
-
-const signPayload = (payload: unknown, secret: string) => {
-  const encodedPayload = encodeBase64Url(JSON.stringify(payload))
-  const signature = createHmac('sha256', secret)
-    .update(encodedPayload)
-    .digest('base64url')
-
-  return `${encodedPayload}.${signature}`
-}
-
-const verifySignedPayload = <T>(token: string | undefined, secret: string) => {
-  if (!token) {
-    return null
-  }
-
-  const [encodedPayload, signature] = token.split('.')
-
-  if (!encodedPayload || !signature) {
-    return null
-  }
-
-  const expectedSignature = createHmac('sha256', secret)
-    .update(encodedPayload)
-    .digest('base64url')
-  const actualBuffer = Buffer.from(signature)
-  const expectedBuffer = Buffer.from(expectedSignature)
-
-  if (
-    actualBuffer.length !== expectedBuffer.length ||
-    !timingSafeEqual(actualBuffer, expectedBuffer)
-  ) {
-    return null
-  }
-
-  try {
-    return JSON.parse(decodeBase64Url(encodedPayload)) as T
-  } catch {
-    return null
   }
 }
 
@@ -135,7 +71,7 @@ const isSecureRequest = (event: any) => {
 const getCookieOptions = (event: unknown) => {
   return {
     httpOnly: true,
-    maxAge: SESSION_TTL_SECONDS,
+    maxAge: RETURN_TO_TTL_SECONDS,
     path: '/',
     sameSite: 'lax' as const,
     secure: isSecureRequest(event),
@@ -156,15 +92,6 @@ const toAuthor = (user: GitHubOAuthUser): FeedbackAuthor => {
   }
 }
 
-const withAdminState = (
-  user: FeedbackAuthor,
-): PublicFeedbackUser => {
-  return {
-    ...user,
-    isAdmin: false,
-  }
-}
-
 const resolveStoredFeedbackUser = async (
   event: unknown,
   author: FeedbackAuthor,
@@ -178,10 +105,10 @@ export const getGitHubOAuthConfig = (event: unknown) => {
   const config = getFeedbackConfig(event)
 
   return {
-    clientId: config.githubOAuth?.clientId ?? '',
-    clientSecret: config.githubOAuth?.clientSecret ?? '',
+    clientId: config.github?.clientId ?? '',
+    clientSecret: config.github?.clientSecret ?? '',
     configured: Boolean(
-      config.githubOAuth?.clientId && config.githubOAuth?.clientSecret,
+      config.github?.clientId && config.github?.clientSecret,
     ),
   }
 }
@@ -214,107 +141,73 @@ export const sanitizeReturnTo = (value: unknown, fallback = '/feedback') => {
   return fallback
 }
 
-export const createFeedbackOAuthState = (
+export const setFeedbackOAuthReturnTo = (
   event: unknown,
   returnTo: string,
 ) => {
-  const state = randomBytes(24).toString('base64url')
-  const payload: OAuthStatePayload = {
-    version: 1,
-    state,
-    returnTo,
-    createdAt: Date.now(),
-  }
-
   setCookieValue(
     event,
-    OAUTH_STATE_COOKIE,
-    signPayload(payload, getSessionSecret(event)),
+    RETURN_TO_COOKIE,
+    sanitizeReturnTo(returnTo),
     {
       ...getCookieOptions(event),
-      maxAge: OAUTH_STATE_TTL_SECONDS,
+      maxAge: RETURN_TO_TTL_SECONDS,
     },
   )
-
-  return state
 }
 
-export const consumeFeedbackOAuthState = (
+export const consumeFeedbackOAuthReturnTo = (
   event: unknown,
-  state: string,
 ) => {
-  const payload = verifySignedPayload<OAuthStatePayload>(
-    getCookieValue(event, OAUTH_STATE_COOKIE),
-    getSessionSecret(event),
-  )
+  const returnTo = sanitizeReturnTo(getCookieValue(event, RETURN_TO_COOKIE))
 
-  clearCookieValue(event, OAUTH_STATE_COOKIE, {
+  clearCookieValue(event, RETURN_TO_COOKIE, {
     path: '/',
   })
 
-  if (
-    !payload ||
-    payload.version !== 1 ||
-    payload.state !== state ||
-    Date.now() - payload.createdAt > OAUTH_STATE_TTL_SECONDS * 1000
-  ) {
-    throw feedbackError(400, 'Invalid GitHub OAuth state.')
-  }
-
-  return {
-    returnTo: sanitizeReturnTo(payload.returnTo),
-  }
+  return returnTo
 }
 
-export const setFeedbackSession = (
+export const setFeedbackSession = async (
   event: unknown,
   githubUser: GitHubOAuthUser,
 ) => {
-  const issuedAt = Date.now()
-  const payload: SessionCookiePayload = {
-    version: 1,
-    user: toAuthor(githubUser),
-    issuedAt,
-    expiresAt: issuedAt + SESSION_TTL_SECONDS * 1000,
-  }
+  const user = await resolveStoredFeedbackUser(event, toAuthor(githubUser))
 
-  setCookieValue(
-    event,
-    SESSION_COOKIE,
-    signPayload(payload, getSessionSecret(event)),
-    {
-      ...getCookieOptions(event),
-      maxAge: SESSION_TTL_SECONDS,
-    },
-  )
-
-  return withAdminState(payload.user)
-}
-
-export const clearFeedbackSession = (event: unknown) => {
-  clearCookieValue(event, SESSION_COOKIE, {
-    path: '/',
+  await setUserSession(asSessionEvent(event), {
+    user,
+    loggedInAt: new Date().toISOString(),
   })
+
+  return user
 }
 
-export const getFeedbackSession = (event: unknown) => {
-  const payload = verifySignedPayload<SessionCookiePayload>(
-    getCookieValue(event, SESSION_COOKIE),
-    getSessionSecret(event),
-  )
+export const clearFeedbackSession = async (event: unknown) => {
+  await clearUserSession(asSessionEvent(event))
+}
 
-  if (!payload || payload.version !== 1 || payload.expiresAt < Date.now()) {
+export const getFeedbackSession = async (event: unknown) => {
+  const session = await getUserSession(asSessionEvent(event))
+  const user = session.user as PublicFeedbackUser | undefined
+
+  if (!user?.id || !user.login) {
     return null
   }
 
   return {
-    user: payload.user,
-    expiresAt: payload.expiresAt,
+    user: {
+      id: Number(user.id),
+      login: user.login,
+      name: user.name || user.login,
+      avatarUrl: user.avatarUrl || '',
+      htmlUrl: user.htmlUrl || `https://github.com/${user.login}`,
+    },
+    expiresAt: null,
   }
 }
 
 export const requireFeedbackUser = async (event: unknown) => {
-  const session = getFeedbackSession(event)
+  const session = await getFeedbackSession(event)
 
   if (!session) {
     throw feedbackError(401, 'GitHub login is required.')
@@ -324,7 +217,7 @@ export const requireFeedbackUser = async (event: unknown) => {
 }
 
 export const resolveFeedbackSessionUser = async (event: unknown) => {
-  const session = getFeedbackSession(event)
+  const session = await getFeedbackSession(event)
 
   if (!session) {
     return null

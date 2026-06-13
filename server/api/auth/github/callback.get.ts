@@ -1,129 +1,89 @@
+import { defineOAuthGitHubEventHandler } from '#imports'
+import { sendRedirect } from 'nitro/h3'
 import {
-  consumeFeedbackOAuthState,
+  consumeFeedbackOAuthReturnTo,
   getGitHubOAuthConfig,
   getGitHubOAuthRedirectUrl,
-  sanitizeReturnTo,
   setFeedbackSession,
 } from '../../../utils/feedback/auth'
-import {
-  feedbackError,
-  getQueryValue,
-  redirectResponse,
-  withApiResponse,
-} from '../../../utils/feedback/http'
 
-type GitHubTokenResponse = {
-  access_token?: string
-  error?: unknown
-  error_description?: unknown
-  error_uri?: unknown
-  message?: unknown
-  documentation_url?: unknown
+const toErrorMessage = (error: unknown) => {
+  const oauthError = error as {
+    message?: unknown
+    statusMessage?: unknown
+    statusCode?: unknown
+    data?: unknown
+  }
+
+  const statusMessage =
+    typeof oauthError.statusMessage === 'string'
+      ? oauthError.statusMessage
+      : typeof oauthError.message === 'string'
+        ? oauthError.message
+        : 'GitHub OAuth login failed.'
+
+  return {
+    status: typeof oauthError.statusCode === 'number' ? oauthError.statusCode : 401,
+    statusMessage: statusMessage.replace(/^Github /, 'GitHub '),
+    data: oauthError.data,
+  }
 }
 
-const toMessage = (value: unknown) => {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined
-}
+const oauthErrorResponse = (
+  error: unknown,
+  redirectUri: string,
+) => {
+  const response = toErrorMessage(error)
 
-const maskClientId = (clientId: string) => {
-  if (clientId.length <= 10) {
-    return clientId ? `${clientId.slice(0, 2)}...` : ''
-  }
-
-  return `${clientId.slice(0, 6)}...${clientId.slice(-4)}`
-}
-
-export default (event: any) => withApiResponse(event, async () => {
-  const oauthConfig = getGitHubOAuthConfig(event)
-
-  if (!oauthConfig.configured) {
-    throw feedbackError(500, 'GitHub OAuth is not configured.')
-  }
-
-  const code = getQueryValue(event, 'code') ?? ''
-  const state = getQueryValue(event, 'state') ?? ''
-  const callbackError = getQueryValue(event, 'error')
-  const callbackErrorDescription = getQueryValue(event, 'error_description')
-
-  if (callbackError) {
-    throw feedbackError(
-      401,
-      callbackErrorDescription || `GitHub OAuth failed: ${callbackError}`,
-      {
-        providerError: callbackError,
-        providerDescription: callbackErrorDescription,
-      },
-    )
-  }
-
-  if (!code || !state) {
-    throw feedbackError(400, 'GitHub OAuth callback is missing code or state.')
-  }
-
-  const oauthState = consumeFeedbackOAuthState(event, state)
-  const redirectUri = getGitHubOAuthRedirectUrl(event)
-  const tokenRequestBody = new URLSearchParams({
-    grant_type: 'authorization_code',
-    client_id: oauthConfig.clientId,
-    client_secret: oauthConfig.clientSecret,
-    redirect_uri: redirectUri,
-    code,
-  })
-  const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'nora-www-feedback',
-    },
-    body: tokenRequestBody.toString(),
-  })
-  const tokenBody = (await tokenResponse.json().catch(() => ({}))) as GitHubTokenResponse
-  const providerError =
-    toMessage(tokenBody.error) ||
-    toMessage(tokenBody.message)
-  const providerDescription = toMessage(tokenBody.error_description)
-  const providerErrorUri =
-    toMessage(tokenBody.error_uri) ||
-    toMessage(tokenBody.documentation_url)
-  const isMissingOAuthApp =
-    tokenResponse.status === 404 ||
-    providerError?.toLowerCase() === 'not found'
-
-  if (!tokenResponse.ok || !tokenBody.access_token || tokenBody.error) {
-    throw feedbackError(
-      401,
-      isMissingOAuthApp
-        ? 'GitHub OAuth App was not found. Check GITHUB_CLIENT_ID in Zeabur.'
-        : providerDescription ||
-          providerError ||
-          'GitHub OAuth token exchange failed.',
-      {
-        providerStatus: tokenResponse.status,
-        providerError,
-        providerDescription,
-        providerErrorUri,
+  return Response.json(
+    {
+      error: true,
+      status: response.status,
+      statusMessage: response.statusMessage,
+      data: {
+        ...(
+          response.data && typeof response.data === 'object'
+            ? response.data
+            : {}
+        ),
         redirectUri,
-        clientId: maskClientId(oauthConfig.clientId),
       },
-    )
-  }
+    },
+    {
+      status: response.status,
+    },
+  )
+}
 
-  const userResponse = await fetch('https://api.github.com/user', {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `token ${tokenBody.access_token}`,
-      'User-Agent': 'nora-www-feedback',
-      'X-GitHub-Api-Version': '2022-11-28',
+export default async (event: any) => {
+  const oauthConfig = getGitHubOAuthConfig(event)
+  const redirectURL = getGitHubOAuthRedirectUrl(event)
+  const handler = defineOAuthGitHubEventHandler({
+    config: {
+      clientId: oauthConfig.clientId,
+      clientSecret: oauthConfig.clientSecret,
+      redirectURL,
+      authorizationURL: 'https://github.com/login/oauth/authorize',
+      tokenURL: 'https://github.com/login/oauth/access_token',
+      apiURL: 'https://api.github.com',
+      scope: ['read:user'],
+      authorizationParams: {
+        allow_signup: 'true',
+      },
+    },
+    async onSuccess(event, { user }) {
+      await setFeedbackSession(event, user)
+
+      return sendRedirect(event, consumeFeedbackOAuthReturnTo(event), 302)
+    },
+    onError(_event, error) {
+      return oauthErrorResponse(error, redirectURL)
     },
   })
-  const githubUser = await userResponse.json()
 
-  if (!userResponse.ok) {
-    throw feedbackError(401, 'GitHub user lookup failed.', githubUser)
+  try {
+    return await handler(event)
+  } catch (error) {
+    return oauthErrorResponse(error, redirectURL)
   }
-
-  setFeedbackSession(event, githubUser)
-
-  return redirectResponse(sanitizeReturnTo(oauthState.returnTo), 302)
-})
+}

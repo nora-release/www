@@ -20,6 +20,7 @@
     "drizzle-orm": "^0.45.2",
     "nitro": "3.0.260311-beta",
     "nuxt": "npm:nuxt-nightly@5x",
+    "nuxt-auth-utils": "^0.5.29",
     "ofetch": "^1.5.1",
     "postgres": "^3.4.9",
     "vue": "^3.5.34",

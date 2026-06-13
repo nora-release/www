@@ -1,8 +1,8 @@
 import {
-  createFeedbackOAuthState,
   getGitHubOAuthConfig,
   getGitHubOAuthRedirectUrl,
   sanitizeReturnTo,
+  setFeedbackOAuthReturnTo,
 } from '../../utils/feedback/auth'
 import {
   feedbackError,
@@ -19,13 +19,7 @@ export default (event: any) => withApiResponse(event, () => {
   }
 
   const returnTo = sanitizeReturnTo(getQueryValue(event, 'next'))
-  const state = createFeedbackOAuthState(event, returnTo)
-  const authorizeUrl = new URL('https://github.com/login/oauth/authorize')
+  setFeedbackOAuthReturnTo(event, returnTo)
 
-  authorizeUrl.searchParams.set('client_id', oauthConfig.clientId)
-  authorizeUrl.searchParams.set('redirect_uri', getGitHubOAuthRedirectUrl(event))
-  authorizeUrl.searchParams.set('scope', 'read:user')
-  authorizeUrl.searchParams.set('state', state)
-
-  return redirectResponse(authorizeUrl.toString(), 302)
+  return redirectResponse(getGitHubOAuthRedirectUrl(event), 302)
 })

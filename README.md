@@ -19,7 +19,7 @@ Configure these environment variables before enabling it:
 | Variable | Purpose |
 | --- | --- |
 | `NORA_SITE_URL` | Public site origin used for the GitHub OAuth callback. |
-| `NORA_SESSION_SECRET` | Long random string used to sign login cookies. |
+| `NUXT_SESSION_PASSWORD` | Long random string used by `nuxt-auth-utils` for login sessions. `NORA_SESSION_SECRET` is also accepted as the same password. |
 | `GITHUB_CLIENT_ID` | GitHub OAuth app client id. |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret. |
 | `DATABASE_URL` | PostgreSQL connection string used by NuxtHub DB. |
