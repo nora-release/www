@@ -11,6 +11,7 @@ import {
   Search,
   ThumbsDown,
   ThumbsUp,
+  UserPlus,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -55,6 +56,12 @@ type FeedbackContributor = FeedbackAuthor & {
   voteCount: number;
 };
 
+type FeedbackAdmin = {
+  createdAt: string;
+  createdByLogin: string | null;
+  githubLogin: string;
+};
+
 type SessionUser = {
   email?: string | null;
   image?: string | null;
@@ -92,12 +99,16 @@ function formatFileSize(sizeBytes: number) {
 export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [contributors, setContributors] = useState<FeedbackContributor[]>([]);
+  const [adminLogin, setAdminLogin] = useState("");
+  const [admins, setAdmins] = useState<FeedbackAdmin[]>([]);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [sort, setSort] = useState<SortMode>("trending");
   const [search, setSearch] = useState("");
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [canManageAdmins, setCanManageAdmins] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -134,6 +145,32 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
     }
   };
 
+  const loadAdmins = async () => {
+    try {
+      const response = await fetch("/api/feedback/admins", {
+        headers: {
+          Accept: "application/json",
+        },
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (response.status === 403) {
+        setAdmins([]);
+        setCanManageAdmins(false);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to load admins.");
+      }
+
+      setAdmins(data.admins ?? []);
+      setCanManageAdmins(true);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load admins.");
+    }
+  };
+
   useEffect(() => {
     let isDisposed = false;
 
@@ -149,12 +186,14 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
     const handleAuthChange = () => {
       void loadSession();
       void loadFeedback();
+      void loadAdmins();
     };
 
     window.addEventListener("nora-auth-change", handleAuthChange);
 
     void loadSession();
     void loadFeedback();
+    void loadAdmins();
 
     return () => {
       isDisposed = true;
@@ -252,6 +291,42 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
     }
 
     setAttachments((currentAttachments) => [...currentAttachments, ...Array.from(files)].slice(0, 5));
+  };
+
+  const addAdmin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const githubLogin = adminLogin.trim();
+
+    if (!githubLogin || !canManageAdmins) {
+      return;
+    }
+
+    setIsAdminSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/feedback/admins", {
+        body: JSON.stringify({ githubLogin }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Failed to add admin.");
+      }
+
+      setAdmins(data.admins ?? []);
+      setCanManageAdmins(true);
+      setAdminLogin("");
+    } catch (adminError) {
+      setError(adminError instanceof Error ? adminError.message : "Failed to add admin.");
+    } finally {
+      setIsAdminSubmitting(false);
+    }
   };
 
   const vote = async (item: FeedbackItem, nextValue: -1 | 1) => {
@@ -425,6 +500,65 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
         </div>
 
         <aside className="space-y-6">
+          {canManageAdmins && (
+            <div className="border border-border/70 bg-card/30 p-5">
+              <h2 className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
+                <UserPlus className="h-4 w-4" aria-hidden="true" />
+                {copy.detail.adminsTitle}
+              </h2>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">{copy.detail.adminHelp}</p>
+
+              <form onSubmit={addAdmin} className="mt-4 grid gap-3">
+                <label className="grid gap-2">
+                  <span className="text-sm font-medium text-foreground">{copy.detail.adminInputLabel}</span>
+                  <input
+                    value={adminLogin}
+                    onChange={(event) => setAdminLogin(event.target.value)}
+                    placeholder={copy.detail.adminInputPlaceholder}
+                    disabled={isAdminSubmitting}
+                    className="h-10 border border-border/70 bg-background/70 px-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground/50 disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={isAdminSubmitting || !adminLogin.trim()}
+                  className="inline-flex h-10 items-center justify-center gap-2 bg-foreground px-4 text-sm font-medium text-background transition-colors hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isAdminSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {isAdminSubmitting ? copy.detail.adminAdding : copy.detail.adminAdd}
+                </button>
+              </form>
+
+              {admins.length === 0 ? (
+                <p className="mt-5 text-sm leading-6 text-muted-foreground">{copy.detail.adminListEmpty}</p>
+              ) : (
+                <div className="mt-5 grid gap-2">
+                  {admins.map((admin) => (
+                    <div key={admin.githubLogin} className="border border-border/70 bg-background/50 px-3 py-2 text-sm">
+                      <a
+                        href={`https://github.com/${admin.githubLogin}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-foreground transition-colors hover:text-muted-foreground"
+                      >
+                        @{admin.githubLogin}
+                      </a>
+                      {admin.createdByLogin && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {copy.detail.adminAddedBy} @{admin.createdByLogin}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="border border-border/70 bg-card/30 p-5">
             <h2 className="text-sm font-medium uppercase tracking-[0.22em] text-muted-foreground">
               {copy.contributors.title}

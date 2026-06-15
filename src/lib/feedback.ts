@@ -117,7 +117,6 @@ export type FeedbackDetail = {
   item: FeedbackItem;
   messages: FeedbackMessage[];
   permissions: {
-    canManageAdmins: boolean;
     canPromote: boolean;
   };
 };
@@ -700,7 +699,6 @@ export async function getFeedbackDetail(
     item: mapFeedbackItem(item, currentGithubId),
     messages: item.messages.map(mapFeedbackMessage),
     permissions: {
-      canManageAdmins: adminState.canPromote,
       canPromote: adminState.canPromote,
     },
   };
