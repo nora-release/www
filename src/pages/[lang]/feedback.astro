@@ -1,0 +1,10 @@
+---
+import FeedbackPage from "../../components/feedback-page.astro";
+import { getLocalizedStaticPaths } from "../../lib/i18n";
+
+export const getStaticPaths = getLocalizedStaticPaths;
+
+const { locale } = Astro.props;
+---
+
+<FeedbackPage locale={locale} />

@@ -1,19 +1,7 @@
-packages:
-  - .
-
-minimumReleaseAgeExclude:
-  - '@cloudflare/workers-types'
-  - '@electric-sql/pglite'
-  - '@esbuild/*'
-  - esbuild
-
 allowBuilds:
-  '@parcel/watcher': true
+  '@parcel/watcher': set this to true or false
+  '@prisma/client': true
+  better-sqlite3: true
   esbuild: true
-
-# Temporary: httpxy uses `input instanceof Request` which fails for cross-realm
-# Request objects passed by Nitro 3's env-runner. Remove once upstream supports
-# duck-typing for Request detection.
-# See: https://github.com/unjs/httpxy
-patchedDependencies:
-  httpxy@0.5.3: patches/httpxy@0.5.3.patch
+  sharp: true
+  workerd: true

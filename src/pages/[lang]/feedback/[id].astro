@@ -1,0 +1,11 @@
+---
+import FeedbackDetailPage from "../../../components/feedback-detail-page.astro";
+import { getLocale } from "../../../lib/i18n";
+
+export const prerender = false;
+
+const locale = getLocale(Astro.params.lang);
+const feedbackId = Astro.params.id ?? "";
+---
+
+<FeedbackDetailPage locale={locale} feedbackId={feedbackId} />
