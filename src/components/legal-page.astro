@@ -1,0 +1,72 @@
+---
+import "../styles/global.css";
+import { localizedPath } from "../lib/i18n";
+import type { Locale } from "../lib/i18n";
+import { getTranslation } from "../lib/translations";
+import type { RichTextSegment } from "../lib/translations";
+import { Footer } from "./footer";
+import PageHead from "./page-head.astro";
+import { SiteHeader } from "./site-header";
+
+type LegalPageKey = "privacy" | "support" | "terms";
+
+interface Props {
+  locale: Locale;
+  page: LegalPageKey;
+}
+
+const { locale, page } = Astro.props;
+const t = getTranslation(locale);
+const content = t.legal[page];
+const meta = t.meta[page];
+const path = `/${page}`;
+
+function getSegmentHref(segment: Exclude<RichTextSegment, string>) {
+  return segment.href.startsWith("/") ? localizedPath(locale, segment.href) : segment.href;
+}
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <PageHead locale={locale} path={path} title={meta.title} description={meta.description} />
+  </head>
+  <body class="font-sans antialiased bg-background text-foreground">
+    <a class="skip-link" href="#main">{t.common.skipToContent}</a>
+    <SiteHeader
+      copy={t.header}
+      currentPath={path}
+      languageLabel={t.footer.language}
+      locale={locale}
+      client:load
+    />
+
+    <main id="main" class="legal-page">
+      <article class="legal-document">
+        <p class="eyebrow">{content.eyebrow}</p>
+        <h1>{content.title}</h1>
+        <p class="legal-updated">{content.updated}</p>
+
+        {content.sections.map((section) => (
+          <section>
+            <h2>{section.title}</h2>
+            {section.paragraphs.map((paragraph, paragraphIndex) => (
+              <p class:list={{ "mt-4": paragraphIndex > 0 }}>
+                {paragraph.map((segment) =>
+                  typeof segment === "string" ? (
+                    segment
+                  ) : (
+                    <a href={getSegmentHref(segment)}>{segment.text}</a>
+                  )
+                )}
+              </p>
+            ))}
+
+          </section>
+        ))}
+      </article>
+    </main>
+
+    <Footer copy={t.footer} locale={locale} showProductLinks={false} client:load />
+  </body>
+</html>

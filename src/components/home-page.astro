@@ -1,0 +1,83 @@
+---
+import "../styles/global.css";
+import { appStoreUrl, localizedPath, siteUrl } from "../lib/i18n";
+import type { Locale } from "../lib/i18n";
+import { getTranslation } from "../lib/translations";
+import { FAQSection } from "./faq-section";
+import { FeatureCardsSection } from "./feature-cards-section";
+import { Footer } from "./footer";
+import { Hero } from "./hero";
+import PageHead from "./page-head.astro";
+import { SmoothScroll } from "./smooth-scroll";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslation(locale);
+const meta = t.meta.home;
+const softwareApplicationStructuredData = {
+  "@type": "SoftwareApplication",
+  "@id": `${siteUrl}/#software`,
+  name: "Nora",
+  applicationCategory: "ProductivityApplication",
+  operatingSystem: "macOS 14.0+",
+  url: siteUrl,
+  downloadUrl: appStoreUrl,
+  description: meta.description,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    url: appStoreUrl,
+  },
+  featureList: t.home.structuredDataFeatureList,
+};
+const faqStructuredData = {
+  "@type": "FAQPage",
+  "@id": `${siteUrl}${localizedPath(locale, "/")}#faq-schema`,
+  mainEntity: t.home.faq.items.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+};
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [softwareApplicationStructuredData, faqStructuredData],
+};
+---
+
+<!doctype html>
+<html lang={locale} class="dark">
+  <head>
+    <PageHead
+      locale={locale}
+      path="/"
+      title={meta.title}
+      description={meta.description}
+      robots="index, follow, max-image-preview:large"
+      structuredData={structuredData}
+    />
+  </head>
+  <body class="font-sans antialiased bg-background">
+    <SmoothScroll client:media="(hover: hover) and (pointer: fine)" />
+    <main>
+      <Hero
+        copy={t.home.hero}
+        currentPath="/"
+        headerCopy={t.header}
+        languageLabel={t.footer.language}
+        locale={locale}
+        client:load
+      />
+      <FeatureCardsSection copy={t.home.featureCards} client:visible={{ rootMargin: "-25% 0px" }} />
+      <FAQSection copy={t.home.faq} client:visible={{ rootMargin: "-25% 0px" }} />
+      <Footer copy={t.footer} locale={locale} client:visible={{ rootMargin: "-25% 0px" }} />
+    </main>
+  </body>
+</html>

@@ -1,0 +1,73 @@
+---
+import "../styles/global.css";
+import type { Locale } from "../lib/i18n";
+import { defaultLocale } from "../lib/i18n";
+import { getTranslation } from "../lib/translations";
+import { Footer } from "./footer";
+import PageHead from "./page-head.astro";
+import { SiteHeader } from "./site-header";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getTranslation(locale);
+const meta = t.meta.changelog;
+const copy = t.changelog;
+const path = "/changelog";
+const changelogs = import.meta.glob("../../changelogs/*.md", { eager: true });
+const changelogModule = (
+  changelogs[`../../changelogs/${locale}.md`] ?? changelogs[`../../changelogs/${defaultLocale}.md`]
+) as { Content: any };
+const Content = changelogModule.Content;
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <PageHead locale={locale} path={path} title={meta.title} description={meta.description} />
+  </head>
+  <body class="font-sans antialiased bg-background text-foreground">
+    <a class="skip-link" href="#main">{t.common.skipToContent}</a>
+    <SiteHeader
+      copy={t.header}
+      currentPath={path}
+      languageLabel={t.footer.language}
+      locale={locale}
+      client:load
+    />
+
+    <main id="main" class="legal-page changelog-page">
+      <article class="legal-document changelog-document">
+        <div class="changelog-hero">
+          <div>
+            <p class="eyebrow">{copy.eyebrow}</p>
+            <h1>{copy.title}</h1>
+            <p class="legal-updated">{copy.intro}</p>
+          </div>
+        </div>
+
+        <div class="changelog-markdown">
+          <Content />
+        </div>
+      </article>
+    </main>
+
+    <script define:vars={{ linkVersionLabel: copy.linkVersionLabel }}>
+      for (const heading of document.querySelectorAll(".changelog-markdown h1[id]")) {
+        if (heading.querySelector("a")) continue;
+
+        const link = document.createElement("a");
+        link.href = `#${heading.id}`;
+        link.textContent = heading.textContent;
+        link.setAttribute("aria-label", `${linkVersionLabel} ${heading.textContent}`);
+
+        heading.textContent = "";
+        heading.append(link);
+      }
+    </script>
+
+    <Footer copy={t.footer} locale={locale} showProductLinks={false} client:load />
+  </body>
+</html>
