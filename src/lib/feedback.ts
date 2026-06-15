@@ -280,10 +280,10 @@ function getIssueRepo(locals?: unknown): string {
   return getFirstEnvValue(env, ["FEEDBACK_GITHUB_REPO", "NORA_FEEDBACK_GITHUB_REPO", "GITHUB_ISSUE_REPO"]) || "nora-release/nora";
 }
 
-function getIssueToken(locals: unknown, fallbackToken: string | null | undefined): string {
+function getIssueToken(locals: unknown): string {
   const env = getRuntimeEnv(locals);
 
-  return getFirstEnvValue(env, ["FEEDBACK_GITHUB_TOKEN", "NORA_FEEDBACK_GITHUB_TOKEN", "GITHUB_ISSUE_TOKEN", "GITHUB_TOKEN"]) || fallbackToken || "";
+  return getFirstEnvValue(env, ["FEEDBACK_GITHUB_TOKEN", "NORA_FEEDBACK_GITHUB_TOKEN", "GITHUB_ISSUE_TOKEN", "GITHUB_TOKEN"]);
 }
 
 function getBootstrapAdminLogins(locals?: unknown): string[] {
@@ -351,6 +351,14 @@ async function getCurrentGithubId(db: FeedbackDatabase, authUser: AuthUser | nul
   const account = await getGitHubAccount(db, authUser);
 
   return account?.accountId ?? null;
+}
+
+async function getStoredGitHubLogin(db: FeedbackDatabase, githubId: string): Promise<string> {
+  const user = await db.query.feedbackUsers.findFirst({
+    where: eq(feedbackUsers.githubId, githubId),
+  });
+
+  return normalizeLogin(user?.githubLogin, "");
 }
 
 async function ensureBootstrapAdmins(
@@ -425,8 +433,11 @@ async function getFeedbackAdminState(
     };
   }
 
-  const profile = await getGitHubProfile(account.accessToken);
-  const login = normalizeLogin(profile?.login ?? account.name ?? authUser.name ?? authUser.email, "");
+  const [profile, storedLogin] = await Promise.all([
+    getGitHubProfile(account.accessToken),
+    getStoredGitHubLogin(db, account.accountId),
+  ]);
+  const login = normalizeLogin(profile?.login || storedLogin || account.name || authUser.name || authUser.email, "");
 
   await ensureBootstrapAdmins(db, locals, {
     githubId: account.accountId,
@@ -1026,7 +1037,10 @@ async function createGitHubIssue(
   const data = await response.json().catch(() => ({})) as GitHubIssueResponse & { message?: string };
 
   if (!response.ok || !data.number || !data.html_url) {
-    throw new Response(data.message || "GitHub issue could not be created.", { status: response.status || 502 });
+    throw new Response(
+      data.message ? `GitHub rejected issue creation: ${data.message}` : "GitHub issue could not be created.",
+      { status: 502 },
+    );
   }
 
   return {
@@ -1063,10 +1077,10 @@ export async function promoteFeedbackToGitHubIssue(
   }
 
   const repo = getIssueRepo(locals);
-  const token = getIssueToken(locals, adminState.accessToken);
+  const token = getIssueToken(locals);
 
   if (!token) {
-    throw new Response("GitHub issue token is required.", { status: 500 });
+    throw new Response("NORA_FEEDBACK_GITHUB_TOKEN is required to promote feedback.", { status: 500 });
   }
 
   const issue = await createGitHubIssue(repo, token, detail.item, detail.messages, detail.issue, detail.attachments);

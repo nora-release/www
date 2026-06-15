@@ -266,6 +266,10 @@ export function FeedbackDetailView({ copy, feedbackId, locale }: FeedbackDetailV
 
     try {
       const response = await fetch(`/api/feedback/${feedbackId}/promote`, {
+        body: JSON.stringify({}),
+        headers: {
+          "Content-Type": "application/json",
+        },
         method: "POST",
       });
       const data = await response.json();
