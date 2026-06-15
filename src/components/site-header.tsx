@@ -9,15 +9,21 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  appStoreUrl,
   localeLabels,
   localePreferenceCookieName,
   localizedPath,
   supportedLocales,
 } from "../lib/i18n";
+import { authClient } from "../lib/auth-client";
 import type { Locale } from "../lib/i18n";
 import type { HeaderCopy } from "../lib/translations";
 import { MagneticButton } from "./magnetic-button";
+
+type SessionUser = {
+  email?: string | null;
+  image?: string | null;
+  name?: string | null;
+};
 
 type SiteHeaderProps = {
   copy: HeaderCopy;
@@ -76,12 +82,35 @@ export function SiteHeader({
   locale,
 }: SiteHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoginPending, setIsLoginPending] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("main");
   const [panelDirection, setPanelDirection] = useState(1);
   const navLinks = [
     { label: copy.nav.changelog, href: localizedPath(locale, "/changelog"), path: "/changelog" },
     { label: copy.nav.support, href: localizedPath(locale, "/support"), path: "/support" },
+    { label: copy.nav.feedback, href: localizedPath(locale, "/feedback"), path: "/feedback" },
   ];
+
+  useEffect(() => {
+    let isDisposed = false;
+
+    const loadSession = async () => {
+      const result = await authClient.getSession().catch(() => null);
+
+      if (isDisposed) return;
+
+      setSessionUser((result as { data?: { user?: SessionUser | null } } | null)?.data?.user ?? null);
+      setIsAuthLoading(false);
+    };
+
+    void loadSession();
+
+    return () => {
+      isDisposed = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -140,6 +169,42 @@ export function SiteHeader({
     const secure = window.location.protocol === "https:" ? "; Secure" : "";
     document.cookie = `${localePreferenceCookieName}=${encodeURIComponent(nextLocale)}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
   };
+
+  const signInWithGitHub = async () => {
+    if (isLoginPending || sessionUser) return;
+
+    setIsLoginPending(true);
+
+    const result = await authClient.signIn.social({
+      callbackURL: localizedPath(locale, currentPath),
+      provider: "github",
+    });
+
+    if (result?.error) {
+      setIsLoginPending(false);
+    }
+  };
+
+  const signOut = async () => {
+    if (isLoginPending || !sessionUser) return;
+
+    setIsLoginPending(true);
+    await authClient.signOut();
+    setSessionUser(null);
+    setIsLoginPending(false);
+    window.dispatchEvent(new Event("nora-auth-change"));
+  };
+
+  const handleAuthAction = () => {
+    if (sessionUser) {
+      void signOut();
+      return;
+    }
+
+    void signInWithGitHub();
+  };
+
+  const authLabel = sessionUser ? copy.logout : copy.login;
 
   return (
     <>
@@ -227,11 +292,9 @@ export function SiteHeader({
           <div className="hidden items-center md:flex">
             <MagneticButton
               className="group flex items-center gap-2 text-sm text-foreground"
-              onClick={() => {
-                window.open(appStoreUrl, "_blank", "noopener,noreferrer");
-              }}
+              onClick={handleAuthAction}
             >
-              {copy.appStore}
+              {authLabel}
               <motion.span
                 initial={{ x: 0 }}
                 whileHover={{ x: 4 }}
@@ -347,21 +410,23 @@ export function SiteHeader({
                             </span>
                           </motion.button>
 
-                          <motion.a
-                            href={appStoreUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <motion.button
+                            type="button"
                             custom={{ direction: panelDirection, index: navLinks.length + 1 }}
                             variants={mobileItemVariants}
                             initial="hidden"
                             animate="visible"
                             exit="exit"
-                            onClick={closeMobileMenu}
+                            onClick={() => {
+                              closeMobileMenu();
+                              handleAuthAction();
+                            }}
+                            disabled={isAuthLoading || isLoginPending}
                             className="flex min-h-14 items-center justify-between border-t border-border/60 py-4 text-base font-medium text-foreground"
                           >
-                            <span>{copy.appStore}</span>
+                            <span>{authLabel}</span>
                             <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                          </motion.a>
+                          </motion.button>
                         </div>
                       </motion.div>
                     ) : (

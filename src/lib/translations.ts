@@ -6,14 +6,16 @@ import { zhCn } from "./translations/zh-cn";
 export type RichTextSegment = string | { href: string; text: string };
 
 export type HeaderCopy = {
-  appStore: string;
   backToMenuAria: string;
   closeMenuAria: string;
   homeAria: string;
+  login: string;
+  logout: string;
   logoAlt: string;
   menuAria: string;
   nav: {
     changelog: string;
+    feedback: string;
     privacy: string;
     support: string;
     terms: string;
@@ -76,6 +78,91 @@ export type FAQCopy = {
   title: string;
 };
 
+export type FeedbackPageCopy = {
+  activityTitle: string;
+  auth: {
+    signInRequired: string;
+  };
+  categories: {
+    all: string;
+    bug: string;
+    feature: string;
+  };
+  contributors: {
+    empty: string;
+    title: string;
+  };
+  detail: {
+    adminAdd: string;
+    adminAddedBy: string;
+    adminAdding: string;
+    adminHelp: string;
+    adminInputLabel: string;
+    adminInputPlaceholder: string;
+    adminListEmpty: string;
+    adminsTitle: string;
+    attachments: string;
+    back: string;
+    commentLabel: string;
+    commentPlaceholder: string;
+    commentSubmit: string;
+    commentSubmitting: string;
+    comments: string;
+    emptyComments: string;
+    issueLink: string;
+    promote: string;
+    promoteComplete: string;
+    promoteHint: string;
+    promoting: string;
+  };
+  empty: {
+    description: string;
+    title: string;
+  };
+  eyebrow: string;
+  form: {
+    attachmentHelp: string;
+    attachmentsLabel: string;
+    categoryLabel: string;
+    close: string;
+    descriptionLabel: string;
+    descriptionPlaceholder: string;
+    markdownHint: string;
+    open: string;
+    removeAttachment: string;
+    submit: string;
+    submitting: string;
+    title: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+  };
+  intro: string;
+  listTitle: string;
+  loading: string;
+  searchPlaceholder: string;
+  signInPanel: {
+    description: string;
+    title: string;
+  };
+  sort: {
+    new: string;
+    top: string;
+    trending: string;
+  };
+  stats: {
+    open: string;
+    promoted: string;
+    votes: string;
+  };
+  status: {
+    open: string;
+    promoted: string;
+  };
+  title: string;
+  voteDownAria: string;
+  voteUpAria: string;
+};
+
 export type LegalPageCopy = {
   eyebrow: string;
   title: string;
@@ -103,6 +190,7 @@ export type LocaleTranslation = {
     skipToContent: string;
   };
   footer: FooterCopy;
+  feedback: FeedbackPageCopy;
   header: HeaderCopy;
   home: {
     featureCards: FeatureCardsCopy;
@@ -117,6 +205,7 @@ export type LocaleTranslation = {
   };
   meta: {
     changelog: PageMeta;
+    feedback: PageMeta;
     home: PageMeta;
     privacy: PageMeta;
     support: PageMeta;

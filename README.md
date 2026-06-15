@@ -55,6 +55,36 @@ npm run deploy
 - `changelogs/`: localized changelog markdown
 - `public/`: static assets served by the site
 
+## Auth
+
+The header login button starts GitHub OAuth through Better Auth at `/api/auth/*`.
+
+Required environment variables:
+
+- `DATABASE_URL`
+- `GITHUB_OAUTH_CLIENT_ID`
+- `GITHUB_OAUTH_CLIENT_SECRET`
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+
+Compatible fallback variable names:
+
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+- `NORA_SESSION_SECRET`
+- `NORA_SITE_URL`
+
+## Feedback
+
+The feedback board stores requests, votes, comments, and promoted GitHub Issues in PostgreSQL through Drizzle.
+
+Optional environment variables:
+
+- `FEEDBACK_ADMIN_GITHUB_IDS`: comma-separated GitHub account ids that can promote feedback to GitHub Issues.
+- `FEEDBACK_ADMIN_GITHUB_LOGINS`: comma-separated GitHub usernames that can promote feedback to GitHub Issues.
+- `FEEDBACK_GITHUB_REPO`: target repo for promoted issues, defaults to `nora-release/nora`.
+- `FEEDBACK_GITHUB_TOKEN`: token used to create GitHub Issues. If omitted, the logged-in admin's GitHub OAuth token is used.
+
 ## Notes
 
 The site is built for Cloudflare. `npm run build` prerenders static routes and emits the Cloudflare output under `dist/`.
