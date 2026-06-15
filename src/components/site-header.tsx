@@ -74,6 +74,21 @@ const mobileItemVariants = {
   }),
 };
 
+function getUserInitials(user: SessionUser | null): string {
+  const label = user?.name || user?.email || "Nora";
+  const words = label
+    .replace(/@.*/u, "")
+    .split(/\s+/u)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  if (words.length >= 2) {
+    return `${words[0]?.[0] ?? ""}${words[1]?.[0] ?? ""}`.toUpperCase();
+  }
+
+  return (words[0]?.slice(0, 2) || "N").toUpperCase();
+}
+
 export function SiteHeader({
   copy,
   currentPath = "/",
@@ -83,6 +98,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [hasAvatarError, setHasAvatarError] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoginPending, setIsLoginPending] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("main");
@@ -92,6 +108,9 @@ export function SiteHeader({
     { label: copy.nav.support, href: localizedPath(locale, "/support"), path: "/support" },
     { label: copy.nav.feedback, href: localizedPath(locale, "/feedback"), path: "/feedback" },
   ];
+  const userLabel = sessionUser?.name || sessionUser?.email || "Nora";
+  const userInitials = getUserInitials(sessionUser);
+  const avatarSrc = sessionUser?.image && !hasAvatarError ? sessionUser.image : null;
 
   useEffect(() => {
     let isDisposed = false;
@@ -111,6 +130,10 @@ export function SiteHeader({
       isDisposed = true;
     };
   }, []);
+
+  useEffect(() => {
+    setHasAvatarError(false);
+  }, [sessionUser?.image]);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return;
@@ -196,6 +219,8 @@ export function SiteHeader({
   };
 
   const handleAuthAction = () => {
+    if (isAuthLoading) return;
+
     if (sessionUser) {
       void signOut();
       return;
@@ -290,19 +315,45 @@ export function SiteHeader({
           </div>
 
           <div className="hidden items-center md:flex">
-            <MagneticButton
-              className="group flex items-center gap-2 text-sm text-foreground"
-              onClick={handleAuthAction}
-            >
-              {authLabel}
-              <motion.span
-                initial={{ x: 0 }}
-                whileHover={{ x: 4 }}
-                transition={{ duration: 0.2 }}
+            {sessionUser ? (
+              <motion.button
+                type="button"
+                aria-label={copy.logout}
+                title={copy.logout}
+                disabled={isLoginPending}
+                onClick={handleAuthAction}
+                className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-background/70 text-sm font-medium text-foreground shadow-[0_12px_30px_rgba(0,0,0,0.18)] backdrop-blur transition-colors hover:border-foreground/40 disabled:pointer-events-none disabled:opacity-60"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
               >
-                <ArrowRight className="h-4 w-4" />
-              </motion.span>
-            </MagneticButton>
+                {avatarSrc ? (
+                  <img
+                    src={avatarSrc}
+                    alt={userLabel}
+                    className="h-full w-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={() => setHasAvatarError(true)}
+                  />
+                ) : (
+                  <span aria-hidden="true">{userInitials}</span>
+                )}
+                <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
+              </motion.button>
+            ) : (
+              <MagneticButton
+                className="group flex items-center gap-2 text-sm text-foreground"
+                onClick={handleAuthAction}
+              >
+                {copy.login}
+                <motion.span
+                  initial={{ x: 0 }}
+                  whileHover={{ x: 4 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </motion.span>
+              </MagneticButton>
+            )}
           </div>
 
           <motion.button
@@ -422,10 +473,32 @@ export function SiteHeader({
                               handleAuthAction();
                             }}
                             disabled={isAuthLoading || isLoginPending}
-                            className="flex min-h-14 items-center justify-between border-t border-border/60 py-4 text-base font-medium text-foreground"
+                            className="flex min-h-14 items-center justify-between border-t border-border/60 py-4 text-base font-medium text-foreground disabled:opacity-60"
                           >
-                            <span>{authLabel}</span>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                            {sessionUser ? (
+                              <span className="flex min-w-0 items-center gap-3">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted text-sm font-medium text-foreground">
+                                  {avatarSrc ? (
+                                    <img
+                                      src={avatarSrc}
+                                      alt={userLabel}
+                                      className="h-full w-full object-cover"
+                                      referrerPolicy="no-referrer"
+                                      onError={() => setHasAvatarError(true)}
+                                    />
+                                  ) : (
+                                    <span aria-hidden="true">{userInitials}</span>
+                                  )}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate">{userLabel}</span>
+                                  <span className="block text-sm font-normal text-muted-foreground">{copy.logout}</span>
+                                </span>
+                              </span>
+                            ) : (
+                              <span>{authLabel}</span>
+                            )}
+                            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                           </motion.button>
                         </div>
                       </motion.div>
