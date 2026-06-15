@@ -82,6 +82,7 @@ export const zhCn = {
     },
     categories: {
       all: "全部",
+      closed: "已关闭",
       bug: "问题",
       feature: "功能",
     },

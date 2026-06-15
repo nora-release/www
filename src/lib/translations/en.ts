@@ -82,6 +82,7 @@ export const en = {
     },
     categories: {
       all: "All",
+      closed: "Closed",
       bug: "Bug",
       feature: "Feature",
     },

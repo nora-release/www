@@ -85,6 +85,7 @@ export type FeedbackPageCopy = {
   };
   categories: {
     all: string;
+    closed: string;
     bug: string;
     feature: string;
   };

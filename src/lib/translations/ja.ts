@@ -82,6 +82,7 @@ export const ja = {
     },
     categories: {
       all: "すべて",
+      closed: "クローズ済み",
       bug: "不具合",
       feature: "機能",
     },

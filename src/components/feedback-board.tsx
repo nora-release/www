@@ -24,7 +24,7 @@ import { MarkdownContent } from "./markdown-content";
 
 type FeedbackCategory = "feature" | "bug";
 type FeedbackStatus = "open" | "promoted" | "closed";
-type CategoryFilter = FeedbackCategory | "all";
+type CategoryFilter = FeedbackCategory | "all" | "closed";
 type SortMode = "new" | "top" | "trending";
 
 type FeedbackAuthor = {
@@ -215,14 +215,15 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
 
     return items
       .filter((item) => {
-        const matchesCategory = category === "all" || item.category === category;
+        const matchesStatus = category === "closed" ? item.status === "closed" : item.status !== "closed";
+        const matchesCategory = category === "all" || category === "closed" || item.category === category;
         const matchesSearch =
           !query ||
           item.title.toLowerCase().includes(query) ||
           item.description.toLowerCase().includes(query) ||
           item.author.login.toLowerCase().includes(query);
 
-        return matchesCategory && matchesSearch;
+        return matchesStatus && matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
         if (sort === "top") {
@@ -443,7 +444,7 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
             </div>
 
             <div className="flex flex-wrap gap-2 border-b border-border/70 p-5">
-              {(["all", "feature", "bug"] as CategoryFilter[]).map((nextCategory) => (
+              {(["all", "feature", "bug", "closed"] as CategoryFilter[]).map((nextCategory) => (
                 <button
                   key={nextCategory}
                   type="button"
@@ -457,8 +458,10 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
                   {nextCategory !== "all" && (
                     nextCategory === "feature" ? (
                       <Lightbulb className="h-4 w-4" aria-hidden="true" />
-                    ) : (
+                    ) : nextCategory === "bug" ? (
                       <Bug className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <X className="h-4 w-4" aria-hidden="true" />
                     )
                   )}
                   {copy.categories[nextCategory]}
