@@ -23,7 +23,7 @@ import type { FeedbackPageCopy } from "../lib/translations";
 import { MarkdownContent } from "./markdown-content";
 
 type FeedbackCategory = "feature" | "bug";
-type FeedbackStatus = "open" | "promoted";
+type FeedbackStatus = "open" | "promoted" | "closed";
 type CategoryFilter = FeedbackCategory | "all";
 type SortMode = "new" | "top" | "trending";
 
@@ -203,6 +203,7 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
 
   const stats = useMemo(() => {
     return {
+      closed: items.filter((item) => item.status === "closed").length,
       open: items.filter((item) => item.status === "open").length,
       promoted: items.filter((item) => item.status === "promoted").length,
       votes: items.reduce((total, item) => total + item.upvotes + item.downvotes, 0),
@@ -383,9 +384,10 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
         </div>
       </header>
 
-      <section className="grid gap-6 py-8 md:grid-cols-3">
+      <section className="grid gap-6 py-8 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label={copy.stats.open} value={stats.open} />
         <Stat label={copy.stats.promoted} value={stats.promoted} />
+        <Stat label={copy.stats.closed} value={stats.closed} />
         <Stat label={copy.stats.votes} value={stats.votes} />
       </section>
 

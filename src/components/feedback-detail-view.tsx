@@ -22,7 +22,7 @@ import type { FeedbackPageCopy } from "../lib/translations";
 import { MarkdownContent } from "./markdown-content";
 
 type FeedbackCategory = "feature" | "bug";
-type FeedbackStatus = "open" | "promoted";
+type FeedbackStatus = "open" | "promoted" | "closed";
 
 type FeedbackAuthor = {
   avatarUrl: string;

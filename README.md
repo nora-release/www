@@ -83,7 +83,10 @@ Optional environment variables:
 - `FEEDBACK_ADMIN_GITHUB_IDS`: comma-separated GitHub account ids that can promote feedback to GitHub Issues.
 - `FEEDBACK_ADMIN_GITHUB_LOGINS`: comma-separated GitHub usernames that can promote feedback to GitHub Issues.
 - `FEEDBACK_GITHUB_REPO`: target repo for promoted issues, defaults to `nora-release/nora`.
-- `FEEDBACK_GITHUB_TOKEN`: token used to create GitHub Issues. If omitted, the logged-in admin's GitHub OAuth token is used.
+- `FEEDBACK_GITHUB_TOKEN`: token used to create GitHub Issues and imported feedback comments.
+- `FEEDBACK_GITHUB_WEBHOOK_SECRET`: secret used to verify GitHub Issue webhooks.
+
+Configure the GitHub repository webhook URL as `/api/github/webhook` and subscribe to Issues events. Closing a linked GitHub Issue marks the feedback as closed; reopening it marks the feedback as promoted again.
 
 ## Notes
 

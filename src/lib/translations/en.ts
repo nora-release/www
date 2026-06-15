@@ -148,11 +148,13 @@ export const en = {
       trending: "Trending",
     },
     stats: {
+      closed: "Closed",
       open: "Open",
       promoted: "Promoted",
       votes: "Votes",
     },
     status: {
+      closed: "Closed",
       open: "Open",
       promoted: "Promoted",
     },

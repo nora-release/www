@@ -148,11 +148,13 @@ export const ja = {
       trending: "最近の更新",
     },
     stats: {
+      closed: "クローズ済み",
       open: "受付中",
       promoted: "採用候補",
       votes: "投票",
     },
     status: {
+      closed: "クローズ済み",
       open: "受付中",
       promoted: "採用候補",
     },

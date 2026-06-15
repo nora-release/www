@@ -1,6 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { Pool } from "pg";
 import {
   adminUsers,
@@ -52,7 +53,7 @@ type GitHubIssueResponse = {
 type FeedbackDatabase = NodePgDatabase<typeof schema>;
 
 export type FeedbackCategory = "feature" | "bug";
-export type FeedbackStatus = "open" | "promoted";
+export type FeedbackStatus = "open" | "promoted" | "closed";
 
 export type FeedbackAuthor = {
   avatarUrl: string;
@@ -157,9 +158,11 @@ function normalizeEnvValue(value: string | undefined): string {
 function getRuntimeEnv(locals?: unknown): RuntimeEnv {
   const runtimeEnv = (locals as RuntimeLocals | undefined)?.runtime?.env ?? {};
   const buildEnv = import.meta.env as RuntimeEnv;
+  const processEnv = process.env as RuntimeEnv;
 
   return {
     ...buildEnv,
+    ...processEnv,
     ...runtimeEnv,
   };
 }
@@ -248,7 +251,11 @@ function normalizeCategory(value: unknown): FeedbackCategory {
 }
 
 function normalizeStatus(value: string): FeedbackStatus {
-  return value === "promoted" ? "promoted" : "open";
+  if (value === "closed" || value === "promoted") {
+    return value;
+  }
+
+  return "open";
 }
 
 function toIsoString(value: Date | string): string {
@@ -284,6 +291,16 @@ function getIssueToken(locals: unknown): string {
   const env = getRuntimeEnv(locals);
 
   return getFirstEnvValue(env, ["FEEDBACK_GITHUB_TOKEN", "NORA_FEEDBACK_GITHUB_TOKEN", "GITHUB_ISSUE_TOKEN", "GITHUB_TOKEN"]);
+}
+
+function getGitHubWebhookSecret(locals: unknown): string {
+  const env = getRuntimeEnv(locals);
+
+  return getFirstEnvValue(env, [
+    "FEEDBACK_GITHUB_WEBHOOK_SECRET",
+    "NORA_FEEDBACK_GITHUB_WEBHOOK_SECRET",
+    "GITHUB_WEBHOOK_SECRET",
+  ]);
 }
 
 function getBootstrapAdminLogins(locals?: unknown): string[] {
@@ -1078,6 +1095,148 @@ async function createGitHubIssueComments(
       );
     }
   }
+}
+
+function verifyGitHubWebhookSignature(body: string, signature: string | null, secret: string): boolean {
+  if (!signature?.startsWith("sha256=")) {
+    return false;
+  }
+
+  const expected = `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(signature);
+
+  return expectedBuffer.length === receivedBuffer.length && timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
+function getWebhookRepoName(payload: unknown): string {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+
+  const repository = (payload as { repository?: unknown }).repository;
+
+  if (!repository || typeof repository !== "object") {
+    return "";
+  }
+
+  const fullName = (repository as { full_name?: unknown }).full_name;
+
+  if (typeof fullName === "string" && fullName.trim()) {
+    return fullName.trim();
+  }
+
+  const name = (repository as { name?: unknown }).name;
+  const owner = (repository as { owner?: { login?: unknown } }).owner;
+  const ownerLogin = owner && typeof owner.login === "string" ? owner.login.trim() : "";
+
+  return typeof name === "string" && name.trim() && ownerLogin ? `${ownerLogin}/${name.trim()}` : "";
+}
+
+function getWebhookIssueNumber(payload: unknown): number | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const issue = (payload as { issue?: unknown }).issue;
+
+  if (!issue || typeof issue !== "object") {
+    return null;
+  }
+
+  const number = (issue as { number?: unknown }).number;
+
+  return typeof number === "number" && Number.isInteger(number) ? number : null;
+}
+
+export async function syncFeedbackIssueFromGitHubWebhook(
+  locals: unknown,
+  body: string,
+  signature: string | null,
+  event: string | null,
+) {
+  const secret = getGitHubWebhookSecret(locals);
+
+  if (!secret) {
+    throw new Response("GitHub webhook secret is required.", { status: 500 });
+  }
+
+  if (!verifyGitHubWebhookSignature(body, signature, secret)) {
+    throw new Response("GitHub webhook signature is invalid.", { status: 401 });
+  }
+
+  if (event === "ping") {
+    return {
+      handled: true,
+      reason: "ping",
+    };
+  }
+
+  if (event !== "issues") {
+    return {
+      handled: false,
+      reason: "unsupported_event",
+    };
+  }
+
+  let payload: { action?: unknown };
+
+  try {
+    payload = JSON.parse(body) as { action?: unknown };
+  } catch {
+    throw new Response("GitHub webhook payload must be valid JSON.", { status: 400 });
+  }
+
+  const action = typeof payload.action === "string" ? payload.action : "";
+
+  if (action !== "closed" && action !== "reopened") {
+    return {
+      action,
+      handled: false,
+      reason: "unsupported_action",
+    };
+  }
+
+  const repo = getWebhookRepoName(payload);
+  const issueNumber = getWebhookIssueNumber(payload);
+
+  if (!repo || !issueNumber) {
+    throw new Response("GitHub issue webhook payload is invalid.", { status: 400 });
+  }
+
+  const db = getFeedbackDb(locals);
+  const linkedIssue = await db.query.githubIssues.findFirst({
+    where: and(eq(githubIssues.repo, repo), eq(githubIssues.issueNumber, issueNumber)),
+  });
+
+  if (!linkedIssue) {
+    return {
+      action,
+      handled: false,
+      issueNumber,
+      reason: "no_feedback_match",
+      repo,
+    };
+  }
+
+  const nextStatus: FeedbackStatus = action === "closed" ? "closed" : "promoted";
+
+  await db
+    .update(feedbackItems)
+    .set({
+      status: nextStatus,
+      updatedAt: new Date(),
+    })
+    .where(eq(feedbackItems.id, linkedIssue.feedbackId));
+
+  return {
+    action,
+    feedbackId: linkedIssue.feedbackId,
+    handled: true,
+    issueNumber,
+    repo,
+    status: nextStatus,
+  };
 }
 
 export async function promoteFeedbackToGitHubIssue(

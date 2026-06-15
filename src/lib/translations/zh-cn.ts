@@ -147,11 +147,13 @@ export const zhCn = {
       trending: "最近活跃",
     },
     stats: {
+      closed: "已关闭",
       open: "进行中",
       promoted: "已采纳",
       votes: "投票",
     },
     status: {
+      closed: "已关闭",
       open: "进行中",
       promoted: "已采纳",
     },

@@ -150,11 +150,13 @@ export type FeedbackPageCopy = {
     trending: string;
   };
   stats: {
+    closed: string;
     open: string;
     promoted: string;
     votes: string;
   };
   status: {
+    closed: string;
     open: string;
     promoted: string;
   };

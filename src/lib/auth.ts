@@ -27,9 +27,11 @@ function normalizeEnvValue(value: string | undefined): string {
 function getRuntimeEnv(locals?: unknown): RuntimeEnv {
   const runtimeEnv = (locals as RuntimeLocals | undefined)?.runtime?.env ?? {};
   const buildEnv = import.meta.env as RuntimeEnv;
+  const processEnv = process.env as RuntimeEnv;
 
   return {
     ...buildEnv,
+    ...processEnv,
     ...runtimeEnv,
   };
 }
