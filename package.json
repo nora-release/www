@@ -4,21 +4,24 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "packageManager": "pnpm@11.5.3",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "NODE_ENV=development astro dev --mode development",
     "build": "astro build",
-    "preview": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "start": "HOST=0.0.0.0 node ./dist/server/entry.mjs",
+    "preview": "pnpm build && HOST=0.0.0.0 PORT=4322 node ./dist/server/entry.mjs"
   },
   "devDependencies": {
-    "@astrojs/sitemap": "^3.2.1",
+    "@astrojs/sitemap": "^3.7.3",
     "@types/pg": "^8.20.0",
-    "astro": "^5.7.13",
-    "wrangler": "^4.91.0"
+    "astro": "^6.4.6"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "12",
-    "@astrojs/react": "^5.0.6",
+    "@astrojs/node": "^10.1.4",
+    "@astrojs/react": "^5.0.7",
     "@liquid-dom/core": "^0.1.1",
     "@tailwindcss/vite": "^4.3.0",
     "better-auth": "^1.6.18",

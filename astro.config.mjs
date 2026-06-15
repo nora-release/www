@@ -1,15 +1,14 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
+import node from "@astrojs/node";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
-
-import cloudflare from "@astrojs/cloudflare";
 
 const isDevServer = process.argv.includes("dev");
 
 export default defineConfig({
   site: "https://nora.elonehoo.me",
-  output: "static",
+  output: "server",
   devToolbar: {
     enabled: false
   },
@@ -27,5 +26,7 @@ export default defineConfig({
     }
   },
 
-  adapter: cloudflare()
+  adapter: node({
+    mode: "standalone"
+  })
 });

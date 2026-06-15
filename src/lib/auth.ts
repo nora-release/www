@@ -56,17 +56,33 @@ function getTrustedOrigins(baseURL: string): string[] {
   );
 }
 
+function isLocalOrigin(origin: string | undefined): boolean {
+  if (!origin) {
+    return false;
+  }
+
+  try {
+    const { hostname } = new URL(origin);
+
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
 export function getAuth(locals?: unknown, requestOrigin?: string) {
   const env = getRuntimeEnv(locals);
   const databaseUrl = getFirstEnvValue(env, ["DATABASE_URL", "POSTGRES_URL"]);
   const clientId = getFirstEnvValue(env, ["GITHUB_CLIENT_ID", "GITHUB_OAUTH_CLIENT_ID"]);
   const clientSecret = getFirstEnvValue(env, ["GITHUB_CLIENT_SECRET", "GITHUB_OAUTH_CLIENT_SECRET"]);
   const secret = getFirstEnvValue(env, ["BETTER_AUTH_SECRET", "NORA_SESSION_SECRET", "SESSION_SECRET"]);
-  const baseURL =
+  const configuredBaseURL =
     getFirstEnvValue(env, ["BETTER_AUTH_URL"]) ||
-    requestOrigin ||
-    getFirstEnvValue(env, ["NORA_SITE_URL", "PUBLIC_SITE_URL"]) ||
-    localBaseUrl;
+    getFirstEnvValue(env, ["NORA_SITE_URL", "PUBLIC_SITE_URL"]);
+  const baseURL =
+    isLocalOrigin(requestOrigin) && requestOrigin
+      ? requestOrigin
+      : configuredBaseURL || requestOrigin || localBaseUrl;
   const cacheKey = JSON.stringify({
     baseURL,
     clientId,
