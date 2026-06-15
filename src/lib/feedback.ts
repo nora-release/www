@@ -981,16 +981,9 @@ export async function voteFeedbackItem(
 
 function buildIssueBody(
   item: FeedbackItem,
-  messages: FeedbackMessage[],
   issue: FeedbackIssue | null,
   attachments: FeedbackAttachment[],
 ): string {
-  const comments = messages
-    .slice()
-    .reverse()
-    .map((message) => `### @${message.author.login}\n\n${message.body}`)
-    .join("\n\n---\n\n");
-
   return [
     `Original feedback: ${item.id}`,
     "",
@@ -1003,24 +996,30 @@ function buildIssueBody(
     item.description,
     attachments.length > 0 ? "\n## Attachments\n" : "",
     attachments.map((attachment) => `- [${attachment.fileName}](${attachment.url})`).join("\n"),
-    comments ? "\n## Comments\n" : "",
-    comments,
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function buildIssueCommentBody(message: FeedbackMessage): string {
+  return [
+    `Imported feedback comment from @${message.author.login}`,
+    `Original comment time: ${message.createdAt}`,
+    "",
+    message.body,
+  ].join("\n");
 }
 
 async function createGitHubIssue(
   repo: string,
   token: string,
   item: FeedbackItem,
-  messages: FeedbackMessage[],
   issue: FeedbackIssue | null,
   attachments: FeedbackAttachment[],
 ) {
   const response = await fetch(`https://api.github.com/repos/${repo}/issues`, {
     body: JSON.stringify({
-      body: buildIssueBody(item, messages, issue, attachments),
+      body: buildIssueBody(item, issue, attachments),
       labels: ["feedback", item.category],
       title: `[Feedback] ${item.title}`,
     }),
@@ -1047,6 +1046,38 @@ async function createGitHubIssue(
     issueNumber: data.number,
     url: data.html_url,
   };
+}
+
+async function createGitHubIssueComments(
+  repo: string,
+  token: string,
+  issueNumber: number,
+  messages: FeedbackMessage[],
+) {
+  for (const message of messages.slice().reverse()) {
+    const response = await fetch(`https://api.github.com/repos/${repo}/issues/${issueNumber}/comments`, {
+      body: JSON.stringify({
+        body: buildIssueCommentBody(message),
+      }),
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "Nora Feedback",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({})) as { message?: string };
+
+      throw new Response(
+        data.message ? `GitHub rejected comment creation: ${data.message}` : "GitHub issue comment could not be created.",
+        { status: 502 },
+      );
+    }
+  }
 }
 
 export async function promoteFeedbackToGitHubIssue(
@@ -1083,7 +1114,8 @@ export async function promoteFeedbackToGitHubIssue(
     throw new Response("NORA_FEEDBACK_GITHUB_TOKEN is required to promote feedback.", { status: 500 });
   }
 
-  const issue = await createGitHubIssue(repo, token, detail.item, detail.messages, detail.issue, detail.attachments);
+  const issue = await createGitHubIssue(repo, token, detail.item, detail.issue, detail.attachments);
+  await createGitHubIssueComments(repo, token, issue.issueNumber, detail.messages);
   const now = new Date();
 
   await db.insert(githubIssues).values({
