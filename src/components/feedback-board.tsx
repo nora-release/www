@@ -96,6 +96,42 @@ function formatFileSize(sizeBytes: number) {
   return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return btoa(binary);
+}
+
+async function fileToPayload(file: File) {
+  return {
+    contentType: file.type || "application/octet-stream",
+    dataBase64: bytesToBase64(new Uint8Array(await file.arrayBuffer())),
+    fileName: file.name || "attachment",
+    sizeBytes: file.size,
+  };
+}
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error: text,
+    };
+  }
+}
+
 export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [contributors, setContributors] = useState<FeedbackContributor[]>([]);
@@ -250,20 +286,21 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
     setError(null);
 
     try {
-      const payload = new FormData();
-
-      payload.set("category", form.category);
-      payload.set("description", form.description);
-      payload.set("title", form.title);
-      attachments.forEach((attachment) => {
-        payload.append("attachments", attachment);
-      });
+      const attachmentPayloads = await Promise.all(attachments.map(fileToPayload));
 
       const response = await fetch("/api/feedback", {
-        body: payload,
+        body: JSON.stringify({
+          attachments: attachmentPayloads,
+          category: form.category,
+          description: form.description,
+          title: form.title,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
         method: "POST",
       });
-      const data = await response.json();
+      const data = await readJsonResponse(response);
 
       if (!response.ok) {
         throw new Error(data.error ?? "Failed to post feedback.");
