@@ -746,7 +746,6 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
                   disabled={!isSignedIn || isSubmitting}
                   className="min-h-36 resize-y border border-border/70 bg-background/70 px-4 py-3 text-base leading-7 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-foreground/50 disabled:cursor-not-allowed disabled:opacity-60"
                   maxLength={2000}
-                  required
                 />
               </label>
 

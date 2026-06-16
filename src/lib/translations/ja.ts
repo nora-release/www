@@ -124,7 +124,7 @@ export const ja = {
       categoryLabel: "種類",
       close: "フォームを閉じる",
       descriptionLabel: "詳細",
-      descriptionPlaceholder: "作業フロー、期待した動き、Nora がどう改善されるとよいかを書いてください。",
+      descriptionPlaceholder: "任意: 背景、期待した動き、スクリーンショット、リンクを追加できます。",
       markdownHint: "Markdown 対応",
       open: "投稿する",
       removeAttachment: "添付ファイルを削除",

@@ -124,7 +124,7 @@ export const zhCn = {
       categoryLabel: "类型",
       close: "关闭表单",
       descriptionLabel: "详情",
-      descriptionPlaceholder: "描述你的工作流、预期结果，以及怎样能让 Nora 变得更好。",
+      descriptionPlaceholder: "可选：补充上下文、预期结果、截图或链接。",
       markdownHint: "支持 Markdown",
       open: "提交反馈",
       removeAttachment: "移除附件",

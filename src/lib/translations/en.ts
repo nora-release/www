@@ -124,7 +124,7 @@ export const en = {
       categoryLabel: "Type",
       close: "Close form",
       descriptionLabel: "Details",
-      descriptionPlaceholder: "Describe the workflow, what you expected, and what would make Nora better.",
+      descriptionPlaceholder: "Optional: add context, expected behavior, screenshots, or links.",
       markdownHint: "Markdown supported",
       open: "Post feedback",
       removeAttachment: "Remove attachment",

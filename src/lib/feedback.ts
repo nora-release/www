@@ -816,7 +816,8 @@ export async function createFeedbackItem(
 ): Promise<FeedbackItem> {
   const body = (payload ?? {}) as Record<string, unknown>;
   const title = normalizeTitle(body.title);
-  const description = normalizeDescription(body.description);
+  const submittedDescription = normalizeDescription(body.description);
+  const description = submittedDescription || title;
   const category = normalizeCategory(body.category);
   const attachments = normalizeFeedbackUploads(body.attachments);
 
@@ -824,8 +825,8 @@ export async function createFeedbackItem(
     throw new Response("Title must be 4-120 characters.", { status: 400 });
   }
 
-  if (description.length < 8 || description.length > 2000) {
-    throw new Response("Description must be 8-2000 characters.", { status: 400 });
+  if (description.length > 2000) {
+    throw new Response("Description must be 2000 characters or fewer.", { status: 400 });
   }
 
   const db = getFeedbackDb(locals);
