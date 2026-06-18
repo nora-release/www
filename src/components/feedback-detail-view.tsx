@@ -39,6 +39,7 @@ type FeedbackIssue = {
 };
 
 type FeedbackItem = {
+  attachmentCount: number;
   author: FeedbackAuthor;
   category: FeedbackCategory;
   createdAt: string;

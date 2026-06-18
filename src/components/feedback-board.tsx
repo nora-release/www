@@ -14,7 +14,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { authClient } from "../lib/auth-client";
 import type { Locale } from "../lib/i18n";
@@ -36,6 +36,7 @@ type FeedbackAuthor = {
 };
 
 type FeedbackItem = {
+  attachmentCount: number;
   author: FeedbackAuthor;
   category: FeedbackCategory;
   createdAt: string;
@@ -116,6 +117,16 @@ async function fileToPayload(file: File) {
   };
 }
 
+function isFile(value: FormDataEntryValue): value is File {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "arrayBuffer" in value &&
+    "name" in value &&
+    "size" in value
+  );
+}
+
 async function readJsonResponse(response: Response) {
   const text = await response.text();
 
@@ -133,6 +144,7 @@ async function readJsonResponse(response: Response) {
 }
 
 export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [contributors, setContributors] = useState<FeedbackContributor[]>([]);
   const [adminLogin, setAdminLogin] = useState("");
@@ -286,7 +298,13 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
     setError(null);
 
     try {
-      const attachmentPayloads = await Promise.all(attachments.map(fileToPayload));
+      const submittedFiles =
+        attachments.length > 0
+          ? attachments
+          : new FormData(event.currentTarget)
+              .getAll("attachments")
+              .filter((entry): entry is File => isFile(entry) && entry.size > 0);
+      const attachmentPayloads = await Promise.all(submittedFiles.map(fileToPayload));
 
       const response = await fetch("/api/feedback", {
         body: JSON.stringify({
@@ -315,9 +333,16 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
         title: "",
       });
       setAttachments([]);
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = "";
+      }
       setCategory("all");
       setSort("trending");
       setIsFormOpen(false);
+
+      if (attachmentPayloads.length > 0 && data.item?.id) {
+        window.location.assign(localizedPath(locale, `/feedback/${data.item.id}`));
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to post feedback.");
     } finally {
@@ -762,12 +787,13 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
                     {copy.form.attachmentHelp}
                   </span>
                   <input
+                    ref={attachmentInputRef}
                     type="file"
+                    name="attachments"
                     multiple
                     disabled={!isSignedIn || isSubmitting}
                     onChange={(event) => {
                       addAttachments(event.currentTarget.files);
-                      event.currentTarget.value = "";
                     }}
                     className="sr-only"
                   />
@@ -786,11 +812,14 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={() => {
+                            if (attachmentInputRef.current) {
+                              attachmentInputRef.current.value = "";
+                            }
                             setAttachments((currentAttachments) =>
                               currentAttachments.filter((_, index) => index !== attachmentIndex),
-                            )
-                          }
+                            );
+                          }}
                           disabled={isSubmitting}
                           className="inline-flex h-8 w-8 shrink-0 items-center justify-center border border-border/70 text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                           aria-label={copy.form.removeAttachment}
@@ -938,6 +967,13 @@ function FeedbackListItem({
             <a href={detailHref} className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
               <MessageSquare className="h-4 w-4" aria-hidden="true" />
               {item.messageCount}
+            </a>
+          )}
+
+          {item.attachmentCount > 0 && (
+            <a href={detailHref} className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground">
+              <Paperclip className="h-4 w-4" aria-hidden="true" />
+              {item.attachmentCount}
             </a>
           )}
         </div>

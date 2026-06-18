@@ -64,6 +64,7 @@ export type FeedbackAuthor = {
 };
 
 export type FeedbackItem = {
+  attachmentCount: number;
   author: FeedbackAuthor;
   category: FeedbackCategory;
   createdAt: string;
@@ -752,8 +753,10 @@ function mapFeedbackItem(
   const userVote = currentGithubId
     ? (item.votes.find((vote) => String(vote.githubId) === currentGithubId)?.value ?? 0)
     : 0;
+  const itemAttachments = (item as { attachments?: unknown[] }).attachments;
 
   return {
+    attachmentCount: Array.isArray(itemAttachments) ? itemAttachments.length : 0,
     author: {
       avatarUrl: item.author.avatarUrl,
       githubId: String(item.author.githubId),
@@ -895,6 +898,7 @@ export async function listFeedbackItems(
   const items = await db.query.feedbackItems.findMany({
     orderBy: [desc(feedbackItems.updatedAt)],
     with: {
+      attachments: true,
       author: true,
       messages: true,
       votes: true,
