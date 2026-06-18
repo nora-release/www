@@ -96,26 +96,6 @@ function formatFileSize(sizeBytes: number) {
   return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunkSize = 0x8000;
-
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
-  }
-
-  return btoa(binary);
-}
-
-async function fileToPayload(file: File) {
-  return {
-    contentType: file.type || "application/octet-stream",
-    dataBase64: bytesToBase64(new Uint8Array(await file.arrayBuffer())),
-    fileName: file.name || "attachment",
-    sizeBytes: file.size,
-  };
-}
-
 async function readJsonResponse(response: Response) {
   const text = await response.text();
 
@@ -286,17 +266,20 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
     setError(null);
 
     try {
-      const attachmentPayloads = await Promise.all(attachments.map(fileToPayload));
+      const formData = new FormData();
+
+      formData.set("category", form.category);
+      formData.set("description", form.description);
+      formData.set("title", form.title);
+
+      for (const attachment of attachments) {
+        formData.append("attachments", attachment, attachment.name);
+      }
 
       const response = await fetch("/api/feedback", {
-        body: JSON.stringify({
-          attachments: attachmentPayloads,
-          category: form.category,
-          description: form.description,
-          title: form.title,
-        }),
+        body: formData,
         headers: {
-          "Content-Type": "application/json",
+          Accept: "application/json",
         },
         method: "POST",
       });

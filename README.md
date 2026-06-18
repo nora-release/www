@@ -85,6 +85,10 @@ Optional environment variables:
 - `FEEDBACK_GITHUB_REPO`: target repo for promoted issues, defaults to `nora-release/nora`.
 - `FEEDBACK_GITHUB_TOKEN`: token used to create GitHub Issues and imported feedback comments.
 - `FEEDBACK_GITHUB_WEBHOOK_SECRET`: secret used to verify GitHub Issue webhooks.
+- `FEEDBACK_ATTACHMENT_GITHUB_TOKEN`: token used to upload feedback attachments.
+- `FEEDBACK_ATTACHMENT_GITHUB_REPO`: attachment storage repo, defaults to `elonehoo-picture/core`.
+- `FEEDBACK_ATTACHMENT_GITHUB_BRANCH`: attachment storage branch, defaults to `main`.
+- `FEEDBACK_ATTACHMENT_GITHUB_PATH_PREFIX`: attachment storage path prefix, defaults to `feedback`.
 
 Configure the GitHub repository webhook URL as `/api/github/webhook` and subscribe to Issues events. Closing a linked GitHub Issue marks the feedback as closed; reopening it marks the feedback as promoted again.
 

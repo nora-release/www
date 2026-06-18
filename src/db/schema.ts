@@ -95,7 +95,12 @@ export const feedbackAttachments = pgTable("feedback_attachments", {
   fileName: text("file_name").notNull(),
   contentType: text("content_type").notNull(),
   sizeBytes: integer("size_bytes").notNull(),
-  dataBase64: text("data_base64").notNull(),
+  dataBase64: text("data_base64"),
+  storageProvider: text("storage_provider").notNull().default("database"),
+  storageRepo: text("storage_repo"),
+  storageBranch: text("storage_branch"),
+  storagePath: text("storage_path"),
+  storageUrl: text("storage_url"),
   createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull(),
 });
 

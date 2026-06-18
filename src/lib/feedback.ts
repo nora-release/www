@@ -129,8 +129,18 @@ export type FeedbackUpload = {
   sizeBytes: number;
 };
 
+type StoredFeedbackUpload = Omit<FeedbackUpload, "dataBase64"> & {
+  dataBase64: string | null;
+  id: string;
+  storageBranch: string | null;
+  storagePath: string | null;
+  storageProvider: "database" | "github";
+  storageRepo: string | null;
+  storageUrl: string | null;
+};
+
 export type FeedbackAttachmentDownload = {
-  contentBase64: string;
+  content: Uint8Array;
   contentType: string;
   fileName: string;
   sizeBytes: number;
@@ -281,6 +291,60 @@ function getEnvList(env: RuntimeEnv, names: string[]): string[] {
     .filter(Boolean);
 }
 
+function splitGitHubRepo(repo: string): { owner: string; repoName: string } {
+  const [owner, repoName] = repo.split("/").map((part) => part.trim()).filter(Boolean);
+
+  if (!owner || !repoName) {
+    throw new Response("Feedback attachment GitHub repository is invalid.", { status: 500 });
+  }
+
+  return { owner, repoName };
+}
+
+function encodeGitHubPath(path: string): string {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+function sanitizeGitHubPathSegment(value: string): string {
+  return value
+    .trim()
+    .replace(/[\\/]+/gu, "-")
+    .replace(/[\x00-\x1F\x7F]+/gu, "")
+    .replace(/\s+/gu, "-")
+    .replace(/[^A-Za-z0-9._-]/gu, "-")
+    .replace(/-+/gu, "-")
+    .replace(/^[.-]+/u, "")
+    .slice(0, 120);
+}
+
+function createAttachmentStoragePath(
+  locals: unknown,
+  feedbackId: string,
+  attachmentId: string,
+  fileName: string,
+): string {
+  const prefix = getAttachmentStoragePrefix(locals);
+  const safeFileName = sanitizeGitHubPathSegment(fileName) || "attachment";
+  const path = `${feedbackId}/${attachmentId}-${safeFileName}`;
+
+  return prefix ? `${prefix}/${path}` : path;
+}
+
+function buildRawGitHubUrl(repo: string, branch: string, path: string): string {
+  return `https://raw.githubusercontent.com/${repo}/${encodeURIComponent(branch)}/${encodeGitHubPath(path)}`;
+}
+
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value.replace(/\s+/gu, ""));
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
 function getIssueRepo(locals?: unknown): string {
   const env = getRuntimeEnv(locals);
 
@@ -291,6 +355,60 @@ function getIssueToken(locals: unknown): string {
   const env = getRuntimeEnv(locals);
 
   return getFirstEnvValue(env, ["FEEDBACK_GITHUB_TOKEN", "NORA_FEEDBACK_GITHUB_TOKEN", "GITHUB_ISSUE_TOKEN", "GITHUB_TOKEN"]);
+}
+
+function getAttachmentStorageRepo(locals: unknown): string {
+  const env = getRuntimeEnv(locals);
+
+  return (
+    getFirstEnvValue(env, [
+      "FEEDBACK_ATTACHMENT_GITHUB_REPO",
+      "NORA_FEEDBACK_ATTACHMENT_GITHUB_REPO",
+      "GITHUB_ATTACHMENT_REPO",
+    ]) || "elonehoo-picture/core"
+  );
+}
+
+function getAttachmentStorageBranch(locals: unknown): string {
+  const env = getRuntimeEnv(locals);
+
+  return (
+    getFirstEnvValue(env, [
+      "FEEDBACK_ATTACHMENT_GITHUB_BRANCH",
+      "NORA_FEEDBACK_ATTACHMENT_GITHUB_BRANCH",
+      "GITHUB_ATTACHMENT_BRANCH",
+    ]) || "main"
+  );
+}
+
+function getAttachmentStoragePrefix(locals: unknown): string {
+  const env = getRuntimeEnv(locals);
+  const prefix =
+    getFirstEnvValue(env, [
+      "FEEDBACK_ATTACHMENT_GITHUB_PATH_PREFIX",
+      "NORA_FEEDBACK_ATTACHMENT_GITHUB_PATH_PREFIX",
+      "GITHUB_ATTACHMENT_PATH_PREFIX",
+    ]) || "feedback";
+
+  return prefix
+    .split("/")
+    .map((segment) => sanitizeGitHubPathSegment(segment))
+    .filter(Boolean)
+    .join("/");
+}
+
+function getAttachmentStorageToken(locals: unknown): string {
+  const env = getRuntimeEnv(locals);
+
+  return getFirstEnvValue(env, [
+    "FEEDBACK_ATTACHMENT_GITHUB_TOKEN",
+    "NORA_FEEDBACK_ATTACHMENT_GITHUB_TOKEN",
+    "FEEDBACK_GITHUB_TOKEN",
+    "NORA_FEEDBACK_GITHUB_TOKEN",
+    "GITHUB_ATTACHMENT_TOKEN",
+    "GITHUB_TOKEN",
+    "GH_TOKEN",
+  ]);
 }
 
 function getGitHubWebhookSecret(locals: unknown): string {
@@ -358,6 +476,102 @@ async function getGitHubProfile(accessToken: string | null): Promise<GitHubProfi
   }
 
   return response.json() as Promise<GitHubProfile>;
+}
+
+async function uploadFeedbackAttachmentToGitHub(
+  locals: unknown,
+  feedbackId: string,
+  attachmentId: string,
+  upload: FeedbackUpload,
+): Promise<StoredFeedbackUpload> {
+  const token = getAttachmentStorageToken(locals);
+
+  if (!token) {
+    throw new Response("FEEDBACK_ATTACHMENT_GITHUB_TOKEN is required to upload feedback attachments.", {
+      status: 500,
+    });
+  }
+
+  const repo = getAttachmentStorageRepo(locals);
+  const branch = getAttachmentStorageBranch(locals);
+  const { owner, repoName } = splitGitHubRepo(repo);
+  const path = createAttachmentStoragePath(locals, feedbackId, attachmentId, upload.fileName);
+  const endpoint = `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubPath(path)}`;
+  const response = await fetch(endpoint, {
+    body: JSON.stringify({
+      branch,
+      content: upload.dataBase64,
+      message: `Add feedback attachment ${feedbackId}/${attachmentId}`,
+    }),
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "User-Agent": "Nora Feedback",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    method: "PUT",
+  });
+
+  if (!response.ok) {
+    throw new Response(`Failed to upload attachment to GitHub (${response.status}).`, { status: 502 });
+  }
+
+  const data = (await response.json().catch(() => ({}))) as {
+    content?: {
+      download_url?: string | null;
+    };
+  };
+
+  return {
+    ...upload,
+    dataBase64: null,
+    id: attachmentId,
+    storageBranch: branch,
+    storagePath: path,
+    storageProvider: "github",
+    storageRepo: repo,
+    storageUrl: data.content?.download_url || buildRawGitHubUrl(repo, branch, path),
+  };
+}
+
+async function fetchGitHubAttachmentContent(
+  locals: unknown,
+  attachment: typeof feedbackAttachments.$inferSelect,
+): Promise<Uint8Array> {
+  const repo = attachment.storageRepo || getAttachmentStorageRepo(locals);
+  const branch = attachment.storageBranch || getAttachmentStorageBranch(locals);
+  const path = attachment.storagePath;
+  const token = getAttachmentStorageToken(locals);
+
+  if (path && token) {
+    const { owner, repoName } = splitGitHubRepo(repo);
+    const endpoint =
+      `https://api.github.com/repos/${owner}/${repoName}/contents/${encodeGitHubPath(path)}` +
+      `?ref=${encodeURIComponent(branch)}`;
+    const response = await fetch(endpoint, {
+      headers: {
+        Accept: "application/vnd.github.raw+json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "Nora Feedback",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    if (response.ok) {
+      return new Uint8Array(await response.arrayBuffer());
+    }
+  }
+
+  if (attachment.storageUrl) {
+    const response = await fetch(attachment.storageUrl);
+
+    if (response.ok) {
+      return new Uint8Array(await response.arrayBuffer());
+    }
+  }
+
+  throw new Response("Attachment file could not be loaded.", { status: 502 });
 }
 
 async function getCurrentGithubId(db: FeedbackDatabase, authUser: AuthUser | null | undefined) {
@@ -833,6 +1047,13 @@ export async function createFeedbackItem(
   const author = await resolveFeedbackAuthor(db, authUser);
   const id = createFeedbackId();
   const now = new Date();
+  const storedAttachments = await Promise.all(
+    attachments.map((attachment) => {
+      const attachmentId = createFeedbackAttachmentId();
+
+      return uploadFeedbackAttachmentToGitHub(locals, id, attachmentId, attachment);
+    }),
+  );
 
   await db.insert(feedbackItems).values({
     authorGithubId: author.githubId,
@@ -845,16 +1066,21 @@ export async function createFeedbackItem(
     updatedAt: now,
   });
 
-  if (attachments.length > 0) {
+  if (storedAttachments.length > 0) {
     await db.insert(feedbackAttachments).values(
-      attachments.map((attachment) => ({
+      storedAttachments.map((attachment) => ({
         contentType: attachment.contentType,
         createdAt: now,
         dataBase64: attachment.dataBase64,
         feedbackId: id,
         fileName: attachment.fileName,
-        id: createFeedbackAttachmentId(),
+        id: attachment.id,
         sizeBytes: attachment.sizeBytes,
+        storageBranch: attachment.storageBranch,
+        storagePath: attachment.storagePath,
+        storageProvider: attachment.storageProvider,
+        storageRepo: attachment.storageRepo,
+        storageUrl: attachment.storageUrl,
         uploaderGithubId: author.githubId,
       })),
     );
@@ -930,8 +1156,19 @@ export async function getFeedbackAttachmentDownload(
     throw new Response("Attachment not found.", { status: 404 });
   }
 
+  const content =
+    attachment.storageProvider === "github"
+      ? await fetchGitHubAttachmentContent(locals, attachment)
+      : attachment.dataBase64
+        ? base64ToBytes(attachment.dataBase64)
+        : null;
+
+  if (!content) {
+    throw new Response("Attachment file is missing.", { status: 404 });
+  }
+
   return {
-    contentBase64: attachment.dataBase64,
+    content,
     contentType: attachment.contentType,
     fileName: attachment.fileName,
     sizeBytes: attachment.sizeBytes,
