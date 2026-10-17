@@ -4,6 +4,7 @@ import {
   listFeedbackContributors,
   listFeedbackItems,
 } from "../../../lib/feedback";
+import { deleteTemporaryUploads, readTemporaryUploads } from "../../../lib/temporary-uploads";
 
 export const prerender = false;
 
@@ -109,7 +110,14 @@ export const GET: APIRoute = async (context) => {
 export const POST: APIRoute = async (context) => {
   try {
     const payload = await parseCreatePayload(context.request);
+    const staged = Array.isArray(payload.temporaryAttachments) && payload.temporaryAttachments.length
+      ? await readTemporaryUploads(payload.temporaryAttachments, context.locals.user)
+      : null;
+
+    if (staged) payload.attachments = staged.uploads;
+
     const item = await createFeedbackItem(context.locals, context.locals.user, payload);
+    if (staged) await deleteTemporaryUploads(staged.pathnames).catch(() => undefined);
     const contributors = await listFeedbackContributors(context.locals);
 
     return json({ contributors, item }, { status: 201 });

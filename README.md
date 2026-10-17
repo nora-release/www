@@ -9,43 +9,41 @@ Nora is a macOS-first local agent chat app. This repository contains the public 
 
 ## Tech Stack
 
-- Astro 5
+- Astro 6
 - React 19 islands
 - Tailwind CSS 4
 - Framer Motion
-- Cloudflare adapter and Wrangler
+- Vercel adapter for production and Node adapter for local previews
 
 ## Local Development
 
 Install dependencies:
 
 ```bash
-npm install
+corepack pnpm install --frozen-lockfile
 ```
 
 Start the development server:
 
 ```bash
-npm run dev
+corepack pnpm dev
 ```
 
 Build the site:
 
 ```bash
-npm run build
+corepack pnpm build
 ```
 
-Preview with Wrangler:
+Preview with the standalone Node server:
 
 ```bash
-npm run preview
+corepack pnpm preview
 ```
 
-Deploy:
-
-```bash
-npm run deploy
-```
+The Vercel project builds and deploys changes pushed to `main` automatically.
+Vercel sets `VERCEL=1`, which selects the Vercel adapter; other environments
+continue to emit the standalone Node server under `dist/server/entry.mjs`.
 
 ## Project Structure
 
@@ -94,7 +92,23 @@ Configure the GitHub repository webhook URL as `/api/github/webhook` and subscri
 
 ## Notes
 
-The site is built for Cloudflare. `npm run build` prerenders static routes and emits the Cloudflare output under `dist/`.
+The site renders pages and API routes on the server. PostgreSQL must be reachable
+from the deployment, and authentication and feedback share a connection pool.
+On Vercel, `@vercel/functions` manages idle connections when an instance pauses.
+Keep secrets in the Vercel project's Production environment variables; do not
+commit them to this repository or include them in browser-exposed variables.
+
+On Vercel, feedback attachments upload directly to a connected **private** Vercel Blob
+store (`BLOB_READ_WRITE_TOKEN`), so the existing 5 MB per-file / 15 MB total
+limits do not exceed the Function request limit. The server authenticates each
+upload and accepts only signed, expiring references owned by the same user.
+Files are copied to the existing GitHub attachment repository and temporary
+blobs are removed after success. Failed submissions can retry the temporary
+uploads for up to an hour. A daily authenticated cleanup job removes up to 100
+abandoned files older than two hours; it can also be invoked manually with
+`Authorization: Bearer <CRON_SECRET>` at `/api/feedback/uploads/cleanup`.
+Production database and Blob credentials are not provided to Preview deployments.
+Standalone Node builds retain the existing upload flow without requiring Blob.
 
 ## License
 

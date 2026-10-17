@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import node from "@astrojs/node";
+import vercel from "@astrojs/vercel";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -18,6 +19,9 @@ export default defineConfig({
   integrations: [sitemap(), react()],
 
   vite: {
+    define: {
+      "import.meta.env.PUBLIC_VERCEL_UPLOADS": JSON.stringify(Boolean(process.env.VERCEL))
+    },
     ...(isDevServer ? { optimizeDeps: { force: true } } : {}),
     plugins: [tailwindcss()],
     build: {
@@ -26,7 +30,7 @@ export default defineConfig({
     }
   },
 
-  adapter: node({
-    mode: "standalone"
-  })
+  adapter: process.env.VERCEL
+    ? vercel()
+    : node({ mode: "standalone" })
 });
