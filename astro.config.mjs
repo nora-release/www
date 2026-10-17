@@ -19,6 +19,9 @@ export default defineConfig({
   integrations: [sitemap(), react()],
 
   vite: {
+    define: {
+      "import.meta.env.PUBLIC_VERCEL_UPLOADS": JSON.stringify(Boolean(process.env.VERCEL))
+    },
     ...(isDevServer ? { optimizeDeps: { force: true } } : {}),
     plugins: [tailwindcss()],
     build: {

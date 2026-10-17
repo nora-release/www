@@ -98,6 +98,18 @@ On Vercel, `@vercel/functions` manages idle connections when an instance pauses.
 Keep secrets in the Vercel project's Production environment variables; do not
 commit them to this repository or include them in browser-exposed variables.
 
+On Vercel, feedback attachments upload directly to a connected **private** Vercel Blob
+store (`BLOB_READ_WRITE_TOKEN`), so the existing 5 MB per-file / 15 MB total
+limits do not exceed the Function request limit. The server authenticates each
+upload and accepts only signed, expiring references owned by the same user.
+Files are copied to the existing GitHub attachment repository and temporary
+blobs are removed after success. Failed submissions can retry the temporary
+uploads for up to an hour. A daily authenticated cleanup job removes up to 100
+abandoned files older than two hours; it can also be invoked manually with
+`Authorization: Bearer <CRON_SECRET>` at `/api/feedback/uploads/cleanup`.
+Production database and Blob credentials are not provided to Preview deployments.
+Standalone Node builds retain the existing upload flow without requiring Blob.
+
 ## License
 
 Source code is available under the [MIT License](LICENSE).

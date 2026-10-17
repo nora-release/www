@@ -9,6 +9,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "dev": "NODE_ENV=development astro dev --mode development",
     "build": "astro build",
     "start": "HOST=0.0.0.0 node ./dist/server/entry.mjs",
@@ -25,6 +26,7 @@
     "@astrojs/vercel": "^10.0.8",
     "@liquid-dom/core": "^0.1.1",
     "@tailwindcss/vite": "^4.3.0",
+    "@vercel/blob": "^2.8.2",
     "@vercel/functions": "^3.10.1",
     "better-auth": "^1.6.18",
     "drizzle-orm": "^0.45.2",

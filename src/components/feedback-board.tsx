@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { upload } from "@vercel/blob/client";
 import { authClient } from "../lib/auth-client";
 import type { Locale } from "../lib/i18n";
 import { localizedPath } from "../lib/i18n";
@@ -97,24 +98,63 @@ function formatFileSize(sizeBytes: number) {
   return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunkSize = 0x8000;
-
-  for (let index = 0; index < bytes.length; index += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
-  }
-
-  return btoa(binary);
-}
+const uploadedFiles = new WeakMap<File, { ticket: string; expiresAt: number }>();
 
 async function fileToPayload(file: File) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+
   return {
     contentType: file.type || "application/octet-stream",
-    dataBase64: bytesToBase64(new Uint8Array(await file.arrayBuffer())),
+    dataBase64: btoa(binary),
     fileName: file.name || "attachment",
     sizeBytes: file.size,
   };
+}
+
+async function uploadAttachments(files: File[]): Promise<string[]> {
+  if (files.length > 5 || files.some((file) => file.size < 1 || file.size > 5 * 1024 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 15 * 1024 * 1024) {
+    throw new Error("Upload up to 5 files, 5 MB per file and 15 MB in total.");
+  }
+
+  const pendingFiles = files.filter((file) => (uploadedFiles.get(file)?.expiresAt ?? 0) <= Date.now());
+
+  if (pendingFiles.length) {
+    const response = await fetch("/api/feedback/uploads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "prepare",
+        files: pendingFiles.map((file) => ({
+          fileName: file.name || "attachment",
+          contentType: file.type || "application/octet-stream",
+          sizeBytes: file.size,
+        })),
+      }),
+    });
+    const data = await readJsonResponse(response);
+
+    if (!response.ok) throw new Error(data.error || "Could not prepare attachments.");
+
+    // Upload one file at a time; retries reuse already uploaded private objects.
+    for (let index = 0; index < pendingFiles.length; index++) {
+      const file = pendingFiles[index];
+      const reference = data.uploads[index];
+      await upload(reference.pathname, file, {
+        access: "private",
+        contentType: file.type || "application/octet-stream",
+        handleUploadUrl: "/api/feedback/uploads",
+        clientPayload: reference.ticket,
+      });
+      uploadedFiles.set(file, { ticket: reference.ticket, expiresAt: Date.now() + 50 * 60 * 1000 });
+    }
+  }
+
+  return files.map((file) => uploadedFiles.get(file)!.ticket);
 }
 
 function isFile(value: FormDataEntryValue): value is File {
@@ -304,11 +344,13 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
           : new FormData(event.currentTarget)
               .getAll("attachments")
               .filter((entry): entry is File => isFile(entry) && entry.size > 0);
-      const attachmentPayloads = await Promise.all(submittedFiles.map(fileToPayload));
+      const attachmentPayload = import.meta.env.PUBLIC_VERCEL_UPLOADS
+        ? { temporaryAttachments: await uploadAttachments(submittedFiles) }
+        : { attachments: await Promise.all(submittedFiles.map(fileToPayload)) };
 
       const response = await fetch("/api/feedback", {
         body: JSON.stringify({
-          attachments: attachmentPayloads,
+          ...attachmentPayload,
           category: form.category,
           description: form.description,
           title: form.title,
@@ -340,7 +382,7 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
       setSort("trending");
       setIsFormOpen(false);
 
-      if (attachmentPayloads.length > 0 && data.item?.id) {
+      if (submittedFiles.length > 0 && data.item?.id) {
         window.location.assign(localizedPath(locale, `/feedback/${data.item.id}`));
       }
     } catch (submitError) {
