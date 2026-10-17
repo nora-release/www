@@ -2,7 +2,8 @@ import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { getDatabasePool } from "./database";
 import {
   adminUsers,
   authAccounts,
@@ -147,7 +148,6 @@ export type FeedbackAttachmentDownload = {
   sizeBytes: number;
 };
 
-const poolCache = new Map<string, Pool>();
 const dbCache = new WeakMap<Pool, FeedbackDatabase>();
 const maxFeedbackAttachments = 5;
 const maxFeedbackAttachmentSizeBytes = 5 * 1024 * 1024;
@@ -190,21 +190,7 @@ function getDatabaseUrl(locals?: unknown): string {
 }
 
 function getFeedbackPool(locals?: unknown): Pool {
-  const databaseUrl = getDatabaseUrl(locals);
-  const cached = poolCache.get(databaseUrl);
-
-  if (cached) {
-    return cached;
-  }
-
-  const pool = new Pool({
-    connectionString: databaseUrl,
-    max: 5,
-  });
-
-  poolCache.set(databaseUrl, pool);
-
-  return pool;
+  return getDatabasePool(getDatabaseUrl(locals));
 }
 
 function getFeedbackDb(locals?: unknown): FeedbackDatabase {

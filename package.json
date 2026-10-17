@@ -22,8 +22,10 @@
   "dependencies": {
     "@astrojs/node": "^10.1.4",
     "@astrojs/react": "^5.0.7",
+    "@astrojs/vercel": "^10.0.8",
     "@liquid-dom/core": "^0.1.1",
     "@tailwindcss/vite": "^4.3.0",
+    "@vercel/functions": "^3.10.1",
     "better-auth": "^1.6.18",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.40.0",

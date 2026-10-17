@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 import node from "@astrojs/node";
+import vercel from "@astrojs/vercel";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -26,7 +27,7 @@ export default defineConfig({
     }
   },
 
-  adapter: node({
-    mode: "standalone"
-  })
+  adapter: process.env.VERCEL
+    ? vercel()
+    : node({ mode: "standalone" })
 });

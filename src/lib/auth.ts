@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { getDatabasePool } from "./database";
 
 type RuntimeEnv = Record<string, string | undefined>;
 type RuntimeLocals = {
@@ -100,10 +100,7 @@ export function getAuth(locals?: unknown, requestOrigin?: string) {
   const auth = betterAuth({
     appName: "Nora",
     baseURL,
-    database: new Pool({
-      connectionString: databaseUrl,
-      max: 5,
-    }),
+    database: getDatabasePool(databaseUrl),
     secret,
     socialProviders: {
       github: {
