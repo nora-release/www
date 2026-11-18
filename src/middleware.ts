@@ -15,20 +15,10 @@ function docsIndexRedirect(url: URL): Response | null {
   return Response.redirect(target.toString(), 308);
 }
 
-/** The site was once published in Chinese and Japanese too; send those addresses to the English page. */
-function retiredLanguageRedirect(url: URL): Response | null {
-  const match = /^\/(?:zh-Hans|ja)(?=\/|$)/u.exec(url.pathname);
-  if (!match) return null;
-
-  const target = new URL(url);
-  target.pathname = url.pathname.slice(match[0].length) || "/";
-  return Response.redirect(target.toString(), 301);
-}
-
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, url } = context;
 
-  const redirect = docsIndexRedirect(url) ?? retiredLanguageRedirect(url);
+  const redirect = docsIndexRedirect(url);
   if (redirect) return redirect;
 
   context.locals.user = null;
