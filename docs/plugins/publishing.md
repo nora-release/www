@@ -1,6 +1,6 @@
 # Publishing
 
-Share a plugin by putting it in a Git repository, then let people install it directly or through a marketplace.
+Share a plugin by putting it in your own Git repository, then let people install it directly or through a marketplace you run. Nora's official plugin repository holds only Nora's own plugins; community plugins live in their authors' repositories.
 
 ## Install straight from GitHub
 
@@ -35,6 +35,12 @@ Users add it once and install by name:
 nora plugins marketplace add acme/plugins
 nora plugins add safe-git
 ```
+
+## App plugins
+
+An app plugin, native Swift code with its own panel, must be signed with a Developer ID and notarized by Apple before Nora will install it from your repository. You need an Apple Developer account for that.
+
+Skill, hook, agent, MCP and provider plugins need no signing.
 
 ## Checklist
 
