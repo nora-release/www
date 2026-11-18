@@ -1,43 +1,33 @@
 ---
 import "../styles/global.css";
-import { localizedPath } from "../lib/i18n";
-import type { Locale } from "../lib/i18n";
-import { getTranslation } from "../lib/translations";
-import type { RichTextSegment } from "../lib/translations";
-import { Footer } from "./footer";
+import { siteCopy as t } from "../lib/copy";
+import type { RichTextSegment } from "../lib/copy";
 import PageHead from "./page-head.astro";
 import { SiteHeader } from "./site-header";
+import SiteFooter from "./site-footer.astro";
 
 type LegalPageKey = "privacy" | "support" | "terms";
 
 interface Props {
-  locale: Locale;
   page: LegalPageKey;
 }
 
-const { locale, page } = Astro.props;
-const t = getTranslation(locale);
+const { page } = Astro.props;
 const content = t.legal[page];
 const meta = t.meta[page];
 const path = `/${page}`;
-
-function getSegmentHref(segment: Exclude<RichTextSegment, string>) {
-  return segment.href.startsWith("/") ? localizedPath(locale, segment.href) : segment.href;
-}
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang="en">
   <head>
-    <PageHead locale={locale} path={path} title={meta.title} description={meta.description} />
+    <PageHead path={path} title={meta.title} description={meta.description} />
   </head>
-  <body class="font-sans antialiased bg-background text-foreground">
+  <body class="n-page">
     <a class="skip-link" href="#main">{t.common.skipToContent}</a>
     <SiteHeader
       copy={t.header}
       currentPath={path}
-      languageLabel={t.footer.language}
-      locale={locale}
       client:load
     />
 
@@ -56,7 +46,7 @@ function getSegmentHref(segment: Exclude<RichTextSegment, string>) {
                   typeof segment === "string" ? (
                     segment
                   ) : (
-                    <a href={getSegmentHref(segment)}>{segment.text}</a>
+                    <a href={segment.href}>{segment.text}</a>
                   )
                 )}
               </p>
@@ -67,6 +57,6 @@ function getSegmentHref(segment: Exclude<RichTextSegment, string>) {
       </article>
     </main>
 
-    <Footer copy={t.footer} locale={locale} showProductLinks={false} client:load />
+    <SiteFooter copy={t.footer} />
   </body>
 </html>

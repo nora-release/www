@@ -18,9 +18,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { upload } from "@vercel/blob/client";
 import { authClient } from "../lib/auth-client";
-import type { Locale } from "../lib/i18n";
-import { localizedPath } from "../lib/i18n";
-import type { FeedbackPageCopy } from "../lib/translations";
+import type { FeedbackPageCopy } from "../lib/copy";
 import { MarkdownContent } from "./markdown-content";
 
 type FeedbackCategory = "feature" | "bug";
@@ -72,15 +70,10 @@ type SessionUser = {
 
 type FeedbackBoardProps = {
   copy: FeedbackPageCopy;
-  locale: Locale;
 };
 
-function getDisplayLocale(locale: Locale) {
-  return locale === "zh-Hans" ? "zh-CN" : locale;
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(getDisplayLocale(locale), {
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
     day: "numeric",
     month: "short",
   }).format(new Date(value));
@@ -183,7 +176,7 @@ async function readJsonResponse(response: Response) {
   }
 }
 
-export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
+export function FeedbackBoard({ copy }: FeedbackBoardProps) {
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [contributors, setContributors] = useState<FeedbackContributor[]>([]);
@@ -383,7 +376,7 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
       setIsFormOpen(false);
 
       if (submittedFiles.length > 0 && data.item?.id) {
-        window.location.assign(localizedPath(locale, `/feedback/${data.item.id}`));
+        window.location.assign(`/feedback/${data.item.id}`);
       }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to post feedback.");
@@ -475,19 +468,13 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
   const isSignedIn = Boolean(sessionUser);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 pb-24 pt-32 md:px-12">
-      <header className="border-b border-border/60 pb-12">
-        <div>
-          <p className="mb-5 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-            {copy.eyebrow}
-          </p>
-          <h1 className="max-w-4xl text-[clamp(3rem,8vw,7rem)] font-bold leading-[0.88] tracking-tight text-foreground">
-            {copy.title}
-          </h1>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground md:text-lg">
-            {copy.intro}
-          </p>
-        </div>
+    <div className="n-wrap pb-24 pt-14 md:pt-20">
+      <header className="border-b border-dashed border-[var(--rule)] pb-10">
+        <p className="n-eyebrow">
+          <b>~</b> / {copy.eyebrow}
+        </p>
+        <h1 className="n-h1 mt-5">{copy.title}</h1>
+        <p className="n-lede mt-5">{copy.intro}</p>
       </header>
 
       <section className="grid gap-6 py-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -500,7 +487,7 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-6">
           <section className="border border-border/70 bg-card/25">
-            <div className="flex flex-col gap-4 border-b border-border/70 p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 border-b border-border/70 p-5">
               <div>
                 <h2 className="text-xl font-semibold text-foreground">{copy.listTitle}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -508,11 +495,11 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(true)}
-                  className="inline-flex h-10 items-center justify-center gap-2 bg-foreground px-4 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                  className="n-btn n-btn--ink !h-10 justify-center"
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                   {copy.form.open}
@@ -599,7 +586,6 @@ export function FeedbackBoard({ copy, locale }: FeedbackBoardProps) {
                     copy={copy}
                     item={item}
                     key={item.id}
-                    locale={locale}
                     onVote={vote}
                     pendingVoteId={pendingVoteId}
                   />
@@ -913,19 +899,17 @@ function Stat({ label, value }: { label: string; value: number }) {
 function FeedbackListItem({
   copy,
   item,
-  locale,
   onVote,
   pendingVoteId,
 }: {
   copy: FeedbackPageCopy;
   item: FeedbackItem;
-  locale: Locale;
   onVote: (item: FeedbackItem, nextValue: -1 | 1) => Promise<void>;
   pendingVoteId: string | null;
 }) {
   const Icon = item.category === "feature" ? Lightbulb : Bug;
   const isVotePending = pendingVoteId === item.id;
-  const detailHref = localizedPath(locale, `/feedback/${item.id}`);
+  const detailHref = `/feedback/${item.id}`;
 
   return (
     <article className="grid gap-5 p-5 md:grid-cols-[4rem_minmax(0,1fr)]">
@@ -968,7 +952,7 @@ function FeedbackListItem({
           <span className="inline-flex h-7 items-center border border-border/70 px-2 text-xs text-muted-foreground">
             {copy.status[item.status]}
           </span>
-          <span className="text-xs text-muted-foreground">{formatDate(item.updatedAt, locale)}</span>
+          <span className="text-xs text-muted-foreground">{formatDate(item.updatedAt)}</span>
         </div>
 
         <h3 className="mt-4 text-xl font-semibold leading-tight text-foreground">

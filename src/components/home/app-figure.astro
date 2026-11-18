@@ -1,0 +1,93 @@
+---
+/*
+ * A drawing of the Nora window, made of HTML so it stays sharp and follows the
+ * page theme. It stands in for a product screenshot.
+ */
+interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+const sessions = ["Fix flaky login test", "Release notes for 0.0.15", "Plan: settings search", "Tidy CSV import"];
+const diff = [
+  { sign: " ", text: "export async function waitForSession(page: Page) {" },
+  { sign: "-", text: "  await page.waitForTimeout(500);" },
+  { sign: "+", text: "  await page.waitForResponse((response) =>" },
+  { sign: "+", text: '    response.url().endsWith("/api/session") && response.ok(),' },
+  { sign: "+", text: "  );" },
+  { sign: " ", text: "  return page.context().cookies();" },
+];
+---
+
+<div role="img" aria-label={label} class="n-window grid min-h-[26rem] text-[0.8rem] md:grid-cols-[13rem_1fr]">
+  <aside class="hidden border-r border-[var(--rule)] bg-[var(--sidebar)] p-3 md:block">
+    <div class="flex gap-1.5 pb-4" aria-hidden="true">
+      <i class="h-2.5 w-2.5 rounded-full bg-[#ff5f57]"></i>
+      <i class="h-2.5 w-2.5 rounded-full bg-[#febc2e]"></i>
+      <i class="h-2.5 w-2.5 rounded-full bg-[#28c840]"></i>
+    </div>
+    <p class="n-mono px-2 pb-2 text-[0.65rem] uppercase tracking-wider text-[var(--muted-foreground)]">web-app</p>
+    {
+      sessions.map((title, index) => (
+        <p
+          class:list={[
+            "truncate px-2 py-1.5",
+            index === 0 ? "rounded-md bg-[var(--secondary)] text-[var(--ink)] font-medium" : "text-[var(--ink-soft)]",
+          ]}
+        >
+          {title}
+        </p>
+      ))
+    }
+  </aside>
+
+  <div class="flex min-w-0 flex-col">
+    <div class="flex items-center justify-between border-b border-[var(--rule)] px-5 py-2.5">
+      <span class="font-medium">Fix flaky login test</span>
+      <span class="n-mono text-[0.68rem] text-[var(--muted-foreground)]">claude-sonnet · high</span>
+    </div>
+
+    <div class="flex-1 space-y-4 px-5 py-5 md:px-8">
+      <p class="ml-auto max-w-md rounded-xl bg-[var(--secondary)] px-3.5 py-2.5">
+        The login test fails about one run in ten. Find out why and fix it.
+      </p>
+
+      <div class="n-mono space-y-1 text-[0.72rem] text-[var(--ink-soft)]">
+        <p><span class="text-[var(--accent-ink)]">▸</span> Read <span class="text-[var(--ink)]">tests/login.test.ts</span></p>
+        <p><span class="text-[var(--accent-ink)]">▸</span> Ran <span class="text-[var(--ink)]">pnpm test login --repeat 20</span> · 2 failed</p>
+        <p><span class="text-[var(--accent-ink)]">▸</span> Edited <span class="text-[var(--ink)]">tests/support/session.ts</span> <span class="text-[var(--chart-2)]">+3</span> <span class="text-[var(--accent-ink)]">−1</span></p>
+      </div>
+
+      <div class="overflow-hidden rounded-lg border border-[var(--rule)]">
+        <p class="n-mono border-b border-dashed border-[var(--rule)] px-3 py-1.5 text-[0.68rem] text-[var(--muted-foreground)]">
+          tests/support/session.ts
+        </p>
+        <div class="n-mono overflow-x-auto py-1.5 text-[0.7rem] leading-[1.65]">
+          {
+            diff.map((line) => (
+              <p
+                class:list={[
+                  "whitespace-pre px-3",
+                  line.sign === "+" && "bg-[color-mix(in_oklab,var(--chart-2)_14%,transparent)]",
+                  line.sign === "-" && "bg-[color-mix(in_oklab,var(--accent-ink)_14%,transparent)]",
+                ]}
+              >
+                <span class="text-[var(--muted-foreground)]">{line.sign}</span> {line.text}
+              </p>
+            ))
+          }
+        </div>
+      </div>
+
+      <p class="max-w-xl leading-relaxed">
+        The test waited a fixed 500 ms for the session cookie, and slow runs took longer. It now waits for the
+        session response itself. <span class="text-[var(--ink-soft)]">20 of 20 runs pass.</span>
+      </p>
+    </div>
+
+    <div class="m-4 mt-0 flex items-center justify-between rounded-xl border border-[var(--rule)] px-3.5 py-3 text-[var(--muted-foreground)]">
+      <span>Ask Nora anything…</span>
+      <span class="n-mono text-[0.68rem]">⌘ ↵</span>
+    </div>
+  </div>
+</div>

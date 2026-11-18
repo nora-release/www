@@ -1,0 +1,38 @@
+---
+import type { HomeCardCopy } from "../../lib/copy";
+
+interface Props {
+  columns: 2 | 3 | 4;
+  items: HomeCardCopy[];
+}
+
+const { columns, items } = Astro.props;
+const columnClass = {
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-2 lg:grid-cols-3",
+  4: "sm:grid-cols-2 lg:grid-cols-4",
+}[columns];
+---
+
+<div class:list={["n-grid", columnClass]}>
+  {
+    items.map((item, index) => (
+      <article class="n-cell">
+        {item.glyph ? (
+          <span class="n-cell-glyph">{item.glyph}</span>
+        ) : (
+          <span class="n-cell-num">{String(index + 1).padStart(2, "0")}</span>
+        )}
+        <h3>{item.title}</h3>
+        <p>{item.body}</p>
+        {item.chips && (
+          <div class="n-chips">
+            {item.chips.map((chip) => (
+              <span class="n-chip">{chip}</span>
+            ))}
+          </div>
+        )}
+      </article>
+    ))
+  }
+</div>

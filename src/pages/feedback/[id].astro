@@ -1,10 +1,9 @@
 ---
 import FeedbackDetailPage from "../../components/feedback-detail-page.astro";
-import { defaultLocale } from "../../lib/i18n";
 
 export const prerender = false;
 
 const feedbackId = Astro.params.id ?? "";
 ---
 
-<FeedbackDetailPage locale={defaultLocale} feedbackId={feedbackId} />
+<FeedbackDetailPage feedbackId={feedbackId} />

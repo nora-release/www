@@ -1,3 +1,22 @@
+# v0.0.15
+
+- Refined how the project sidebar opens.
+
+# v0.0.14
+
+- Fixed signing in to ChatGPT.
+- Fixed tool calls with some providers.
+- Tool call status is clearer in conversations.
+- The activity center collapses more smoothly.
+
+# v0.0.13
+
+- Added grouping modes for the sidebar.
+- Added a setting to turn off notch control.
+- Fixed the size of the menu bar icon.
+- Fixed labels for the diff layout setting.
+- Workspace tabs can be detached more reliably.
+
 # v0.0.12
 
 - Signed the bundled Nora helper used by release builds.

@@ -1,8 +1,0 @@
----
-import LegalPage from "../../components/legal-page.astro";
-import { getLocale } from "../../lib/i18n";
-
-const locale = getLocale(Astro.params.lang);
----
-
-<LegalPage locale={locale} page="privacy" />
