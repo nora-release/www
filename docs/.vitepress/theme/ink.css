@@ -1,0 +1,208 @@
+/* The docs share the site's look: monospace labels, thin rules, one warm accent. */
+:root {
+  --paper: #f6f4ee;
+  --ink: #141413;
+  --ink-soft: #3a3a37;
+  --rule: #d8d4c8;
+  --accent-ink: #d9472f;
+
+  --vp-font-family-base: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --vp-font-family-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --vp-c-bg: var(--paper);
+  --vp-c-bg-alt: #efece4;
+  --vp-c-bg-elv: #fbfaf6;
+  --vp-c-bg-soft: #ebe8df;
+  --vp-c-text-1: var(--ink);
+  --vp-c-text-2: var(--ink-soft);
+  --vp-c-text-3: #6b6862;
+  --vp-c-divider: var(--rule);
+  --vp-c-border: var(--rule);
+  --vp-c-gutter: var(--rule);
+
+  --vp-c-brand-1: #c23d26;
+  --vp-c-brand-2: var(--accent-ink);
+  --vp-c-brand-3: var(--accent-ink);
+  --vp-c-brand-soft: rgba(217, 71, 47, 0.12);
+
+  --vp-code-bg: #ebe8df;
+  --vp-code-color: var(--ink);
+  --vp-code-block-bg: #fbfaf6;
+  --vp-code-block-color: var(--ink);
+  --vp-code-copy-code-bg: #ebe8df;
+
+  --vp-button-brand-bg: var(--ink);
+  --vp-button-brand-text: var(--paper);
+  --vp-button-brand-border: var(--ink);
+  --vp-button-brand-hover-bg: var(--accent-ink);
+  --vp-button-brand-hover-text: #fff8f4;
+  --vp-button-brand-hover-border: var(--accent-ink);
+
+  --vp-custom-block-tip-bg: var(--vp-c-bg-soft);
+  --vp-custom-block-tip-border: transparent;
+}
+
+.dark {
+  --paper: #0d0d0c;
+  --ink: #ecebe6;
+  --ink-soft: #c2c0b8;
+  --rule: #2a2a27;
+  --accent-ink: #f0674d;
+
+  --vp-c-bg-alt: #111110;
+  --vp-c-bg-elv: #131312;
+  --vp-c-bg-soft: #1b1b19;
+  --vp-c-text-3: #8f8c84;
+  --vp-c-brand-1: var(--accent-ink);
+  --vp-code-bg: #1b1b19;
+  --vp-code-block-bg: #131312;
+  --vp-code-copy-code-bg: #1b1b19;
+  --vp-button-brand-hover-text: #140805;
+}
+
+.VPNav .VPNavBar {
+  border-bottom: 1px solid var(--rule);
+}
+
+.VPNavBar .title,
+.VPNavBarTitle .title {
+  font-family: var(--vp-font-family-mono);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.VPSidebar {
+  border-right: 1px solid var(--rule);
+}
+
+.VPSidebarItem.level-0 > .item .text {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.72rem;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: var(--vp-c-text-3);
+}
+
+.VPSidebarItem.is-active > .item .text {
+  color: var(--accent-ink);
+}
+
+.vp-doc h1 {
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.vp-doc h2 {
+  border-top: 1px dashed var(--rule);
+  letter-spacing: -0.02em;
+}
+
+.vp-doc h2::before {
+  content: "## ";
+  font-family: var(--vp-font-family-mono);
+  font-weight: 500;
+  color: var(--accent-ink);
+}
+
+.vp-doc a {
+  text-decoration-color: var(--accent-ink);
+}
+
+.vp-doc div[class*="language-"] {
+  border: 1px solid var(--rule);
+  border-radius: 0;
+}
+
+.vp-doc :not(pre) > code {
+  border-radius: 0;
+}
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+  border: 1px solid var(--rule);
+}
+
+.vp-doc .custom-block {
+  border-radius: 0;
+  border-left: 3px solid var(--accent-ink);
+}
+
+.VPDocFooter .pager-link {
+  border: 1px solid var(--rule);
+  border-radius: 0;
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--accent-ink);
+}
+
+.DocSearch-Button {
+  border-radius: 0;
+  border: 1px solid var(--rule);
+}
+
+.VPButton {
+  border-radius: 0 !important;
+}
+
+.VPLocalSearchBox .shell {
+  border-radius: 0;
+  border: 1px solid var(--rule);
+}
+
+/* Link cards on the docs home. */
+.n-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-top: 1.5rem;
+}
+
+.vp-doc .n-cards a {
+  display: block;
+  padding: 1.1rem 1.2rem 1.3rem;
+  background: var(--vp-c-bg);
+  text-decoration: none;
+  color: var(--vp-c-text-1);
+}
+
+.vp-doc .n-cards a:hover {
+  background: var(--vp-c-bg-elv);
+}
+
+.n-cards b {
+  display: block;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent-ink);
+}
+
+.n-cards strong {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.n-cards span {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.88rem;
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+}
+
+.VPNavBarMenuLink,
+.VPNavBarMenuGroup .text,
+.VPSidebarItem .text,
+.VPDocAsideOutline .outline-link,
+.VPDocAsideOutline .outline-title {
+  font-family: var(--vp-font-family-mono);
+}
+
+.VPNavBarMenuLink::before {
+  content: "/ ";
+  color: var(--vp-c-text-3);
+}

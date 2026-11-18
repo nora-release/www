@@ -1,47 +1,42 @@
 ---
-import { defaultLocale, localizedPath, siteUrl, supportedLocales } from "../lib/i18n";
-import type { Locale } from "../lib/i18n";
+import { siteUrl } from "../lib/site";
 
 interface Props {
-  alternateLocales?: Locale[];
   description: string;
-  locale: Locale;
   path: string;
   robots?: string;
   structuredData?: Record<string, unknown>;
   title: string;
 }
 
-const {
-  alternateLocales = supportedLocales,
-  description,
-  locale,
-  path,
-  robots = "index, follow",
-  structuredData,
-  title,
-} = Astro.props;
-const canonicalPath = localizedPath(locale, path);
+const { description, path, robots = "index, follow", structuredData, title } = Astro.props;
 ---
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#050505" />
-<meta name="color-scheme" content="dark" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f4ee" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0d0c" />
+<meta name="color-scheme" content="light dark" />
+<script is:inline>
+  // Applies the reader's chosen theme before the first paint. The key is the
+  // one VitePress uses, so the site and the docs share one choice.
+  try {
+    const theme = localStorage.getItem("vitepress-theme-appearance");
+    if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+  } catch {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap"
+/>
 <meta name="format-detection" content="telephone=no" />
 <meta name="apple-mobile-web-app-title" content="Nora" />
 <meta name="robots" content={robots} />
 <title>{title}</title>
 <meta name="description" content={description} />
-<link rel="canonical" href={`${siteUrl}${canonicalPath}`} />
-{alternateLocales.map((alternateLocale) => (
-  <link
-    rel="alternate"
-    hreflang={alternateLocale}
-    href={`${siteUrl}${localizedPath(alternateLocale, path)}`}
-  />
-))}
-<link rel="alternate" hreflang="x-default" href={`${siteUrl}${localizedPath(defaultLocale, path)}`} />
+<link rel="canonical" href={`${siteUrl}${path}`} />
 <link rel="icon" href="/favicon.png" type="image/png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/site.webmanifest" />

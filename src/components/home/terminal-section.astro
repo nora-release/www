@@ -1,0 +1,55 @@
+---
+import type { HomeCopy } from "../../lib/copy";
+import SectionHead from "./section-head.astro";
+
+interface Props {
+  copy: HomeCopy["terminal"];
+}
+
+const { copy } = Astro.props;
+
+function lineClass(line: string) {
+  if (line.startsWith("$")) return "";
+  if (line.trimStart().startsWith("✓")) return "text-[var(--chart-2)]";
+  return "n-term-dim";
+}
+---
+
+<section id="terminal" class="scroll-mt-20 py-20 md:py-28">
+  <div class="n-wrap">
+    <SectionHead copy={copy} index="02" />
+    <div class="mt-12 grid gap-10 lg:grid-cols-[1.25fr_1fr] lg:items-start">
+      <div class="n-term min-w-0">
+        <div class="n-term-bar">
+          <i></i><i></i><i></i>
+          <span>~/web-app — nora</span>
+        </div>
+        <div class="n-term-body">
+          {
+            copy.session.map((line) =>
+              line.startsWith("$") ? (
+                <p class="n-term-line"><span class="n-term-prompt">$</span>{line.slice(1)}</p>
+              ) : (
+                <p class:list={["n-term-line", lineClass(line)]}>{line || " "}</p>
+              ),
+            )
+          }
+          <p class="n-term-line"><span class="n-term-prompt">$</span> <span class="inline-block h-[1em] w-[0.55em] translate-y-[0.15em] animate-pulse bg-[var(--accent-ink)]"></span></p>
+        </div>
+      </div>
+      <ol class="border-t border-dashed border-[var(--rule)]">
+        {
+          copy.items.map((item) => (
+            <li class="grid grid-cols-[2.5rem_1fr] gap-3 border-b border-dashed border-[var(--rule)] py-4">
+              <span class="n-cell-num pt-0.5">{item.glyph}</span>
+              <div>
+                <h3 class="n-sans font-semibold">{item.title}</h3>
+                <p class="mt-1 text-[0.82rem] leading-relaxed text-[var(--muted-foreground)]">{item.body}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,29 @@
+---
+import type { HomeSectionCopy } from "../../lib/copy";
+import AccentTitle from "./accent-title.astro";
+
+interface Props {
+  copy: Pick<HomeSectionCopy, "eyebrow" | "lede" | "link" | "title">;
+  index: string;
+}
+
+const { copy, index } = Astro.props;
+---
+
+<p class="n-eyebrow"><b>{index}</b> / {copy.eyebrow}</p>
+<div class="mt-5 grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-end lg:gap-16">
+  <AccentTitle title={copy.title} />
+  <p class="n-lede">
+    {copy.lede}
+    {
+      copy.link && (
+        <>
+          {" "}
+          <a href={copy.link.href} class="n-link whitespace-nowrap text-[var(--ink)]">
+            {copy.link.text} →
+          </a>
+        </>
+      )
+    }
+  </p>
+</div>

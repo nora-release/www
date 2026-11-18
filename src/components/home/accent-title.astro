@@ -1,0 +1,16 @@
+---
+import type { AccentTitle } from "../../lib/copy";
+
+interface Props {
+  as?: "h1" | "h2";
+  class?: string;
+  title: AccentTitle;
+}
+
+const { as: Tag = "h2", class: className, title } = Astro.props;
+const [lead, accent, tail] = title;
+---
+
+<Tag class:list={[Tag === "h1" ? "n-h1" : "n-h2", className]}>
+  {lead}<span class="n-ink-em">{accent}</span>{tail}
+</Tag>

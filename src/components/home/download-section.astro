@@ -1,0 +1,71 @@
+---
+import type { HomeCopy } from "../../lib/copy";
+import { appStoreUrl } from "../../lib/site";
+import AccentTitle from "./accent-title.astro";
+
+interface Props {
+  copy: HomeCopy["download"];
+}
+
+const { copy } = Astro.props;
+---
+
+<section id="download" class="scroll-mt-20 py-20 md:py-28">
+  <div class="n-wrap grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:items-center">
+    <div>
+      <p class="n-eyebrow"><b>05</b> / download</p>
+      <AccentTitle class="mt-4" title={copy.title} />
+      <p class="n-lede mt-5">{copy.lede}</p>
+      <ul class="mt-6 space-y-1 text-xs text-[var(--muted-foreground)]">
+        {copy.notes.map((note) => <li><span class="text-[var(--rule)]">#</span> {note}</li>)}
+      </ul>
+      <a href="/changelog" class="n-mono n-link mt-4 inline-block text-sm">changelog →</a>
+    </div>
+
+    <div class="n-term">
+      <div class="n-term-bar">
+        <i></i><i></i><i></i>
+        <span>$ ls ~/downloads/nora</span>
+        <span class="ml-auto">
+          {copy.versionLabel}: <span data-latest-version>{copy.versionLoading}</span>
+        </span>
+      </div>
+      <div>
+        <div class="n-dl-row">
+          <div>
+            <p class="flex items-center gap-2 text-[0.92rem] font-semibold text-[var(--ink)]">
+              {copy.macTitle} <span class="n-badge">.dmg</span>
+            </p>
+            <p class="mt-1 text-[0.75rem] text-[var(--muted-foreground)]">{copy.macDetail}</p>
+          </div>
+          <a href={appStoreUrl} class="n-btn n-btn--ink !h-9 !text-[0.78rem]">↓ {copy.macAction}</a>
+        </div>
+        <div class="n-dl-row">
+          <div>
+            <p class="flex items-center gap-2 text-[0.92rem] font-semibold text-[var(--ink)]">
+              {copy.cliTitle} <span class="n-badge">cli</span>
+            </p>
+            <p class="mt-1 text-[0.75rem] text-[var(--muted-foreground)]">{copy.cliDetail}</p>
+          </div>
+          <a href="/docs/cli/" class="n-btn n-btn--line !h-9 !text-[0.78rem]">{copy.cliAction}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Fills in the newest release number; the button links to it either way.
+  const target = document.querySelector<HTMLElement>("[data-latest-version]");
+  if (target) {
+    fetch("/api/downloads.json")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const version = data?.release?.version;
+        target.textContent = typeof version === "string" ? version : "—";
+      })
+      .catch(() => {
+        target.textContent = "—";
+      });
+  }
+</script>

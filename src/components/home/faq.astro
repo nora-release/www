@@ -1,0 +1,28 @@
+---
+import type { FAQCopy } from "../../lib/copy";
+
+interface Props {
+  copy: FAQCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<section id="faq" class="scroll-mt-20 py-20 md:py-28">
+  <div class="n-wrap grid gap-10 lg:grid-cols-[1fr_2fr]">
+    <div>
+      <p class="n-eyebrow"><b>04</b> / {copy.eyebrow}</p>
+      <h2 class="n-h2 mt-4">{copy.title}</h2>
+    </div>
+    <div class="n-faq border-t border-dashed border-[var(--rule)]">
+      {
+        copy.items.map((item, index) => (
+          <details open={index === 0}>
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

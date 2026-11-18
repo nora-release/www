@@ -1,0 +1,153 @@
+---
+import { appStoreUrl } from "../../lib/site";
+import type { HomeCopy } from "../../lib/copy";
+import AccentTitle from "./accent-title.astro";
+import AppFigure from "./app-figure.astro";
+import portrait from "./nora-ascii.txt?raw";
+import PixelWordmark from "./pixel-wordmark.astro";
+import ThemedScreenshot from "./themed-screenshot.astro";
+
+interface Props {
+  announcement: HomeCopy["announcement"];
+  copy: HomeCopy["hero"];
+}
+
+const { announcement, copy } = Astro.props;
+---
+
+<section class="relative">
+  <div class="n-wrap pb-16 pt-14 md:pb-24 md:pt-20">
+    <div class="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+      <div class="min-w-0">
+        <a href={announcement.href} class="group inline-flex flex-wrap items-baseline gap-x-2 text-[0.8rem] text-[var(--muted-foreground)] hover:text-[var(--ink)]">
+          <span class="text-[var(--accent-ink)]">[{announcement.tag}]</span>
+          {announcement.text}
+          <span class="transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </a>
+
+        <PixelWordmark class="mt-7 h-auto w-[min(100%,22rem)] text-[var(--ink)]" />
+
+        <AccentTitle as="h1" class="mt-9" title={copy.title} />
+        <p class="n-lede mt-8">{copy.lede}</p>
+
+        <div class="mt-9 flex flex-wrap items-center gap-3">
+          <a href={appStoreUrl} class="n-btn n-btn--ink">
+            <span aria-hidden="true">↓</span>
+            {copy.download}
+          </a>
+          <a href="/docs/" class="n-btn n-btn--line">
+            {copy.docs}
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <p class="mt-6 max-w-lg text-[0.75rem] leading-relaxed text-[var(--muted-foreground)]">
+          <span class="text-[var(--rule)]">#</span> {copy.specs}
+        </p>
+      </div>
+
+      <figure class="hidden lg:block">
+        <div class="n-portrait relative cursor-crosshair select-none" data-portrait aria-hidden="true">
+          <pre data-portrait-base class="overflow-hidden text-[0.56rem] leading-[1.18] text-[var(--ink-soft)] xl:text-[0.62rem]">{portrait}</pre>
+          <pre data-portrait-glow class="pointer-events-none absolute inset-0 overflow-hidden text-[0.56rem] leading-[1.18] text-[var(--accent-ink)] xl:text-[0.62rem]"></pre>
+        </div>
+        <figcaption class="mt-5 flex items-center gap-3 text-[0.75rem] text-[var(--muted-foreground)]">
+          <span class="h-px w-6 bg-[var(--rule)]"></span>
+          nora.png → 72 cols
+          <span class="h-px flex-1 bg-[var(--rule)]"></span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <figure class="n-fig mt-20 md:mt-24">
+      <span class="n-fig-corner" aria-hidden="true"></span>
+      <span class="n-fig-label">[ <b>fig.01</b> {copy.panelLabel} ]</span>
+      <ThemedScreenshot name="app" alt={copy.figureAlt}>
+        <AppFigure label={copy.figureAlt} />
+      </ThemedScreenshot>
+    </figure>
+  </div>
+</section>
+
+<script>
+  // Characters near the cursor turn into strokes that circle it, then settle back into the portrait.
+  const strokes = ["-", "\\", "|", "/"];
+  const radius = 4.5;
+
+  /** The stroke along the circle around the cursor at this cell; columns are half as tall as rows. */
+  function stroke(dx: number, dy: number) {
+    const tangent = Math.atan2(dx / 2, -dy);
+    const index = Math.round(((tangent % Math.PI) + Math.PI) % Math.PI / (Math.PI / 4)) % 4;
+    return strokes[index];
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-portrait]")) {
+    const base = root.querySelector<HTMLElement>("[data-portrait-base]");
+    const glow = root.querySelector<HTMLElement>("[data-portrait-glow]");
+    if (!base || !glow || window.matchMedia("(prefers-reduced-motion: reduce)").matches) continue;
+
+    const rows = (base.textContent ?? "").replace(/\n$/u, "").split("\n");
+    const width = Math.max(...rows.map((row) => row.length));
+    const cells = rows.map((row) => row.padEnd(width, " ").split(""));
+    const heat = cells.map((row) => row.map(() => 0));
+    let pointer: { x: number; y: number } | null = null;
+    let frame = 0;
+
+    const cellSize = () => {
+      const box = base.getBoundingClientRect();
+      return { box, w: box.width / width, h: box.height / rows.length };
+    };
+
+    const render = () => {
+      frame = 0;
+      let active = false;
+      if (pointer) {
+        for (let y = Math.max(0, Math.floor(pointer.y - radius)); y <= Math.min(rows.length - 1, Math.ceil(pointer.y + radius)); y++) {
+          for (let x = Math.max(0, Math.floor(pointer.x - radius * 2)); x <= Math.min(width - 1, Math.ceil(pointer.x + radius * 2)); x++) {
+            const distance = Math.hypot((x - pointer.x) / 2, y - pointer.y);
+            if (distance < radius) heat[y][x] = Math.max(heat[y][x], 1 - distance / radius);
+          }
+        }
+      }
+      const baseLines: string[] = [];
+      const glowLines: string[] = [];
+      for (let y = 0; y < rows.length; y++) {
+        let baseLine = "";
+        let glowLine = "";
+        for (let x = 0; x < width; x++) {
+          const original = cells[y][x];
+          const level = heat[y][x];
+          if (level > 0.04 && original !== " ") {
+            active = true;
+            heat[y][x] = pointer ? level * 0.94 : level * 0.88;
+            baseLine += " ";
+            const near = pointer && Math.hypot((x - pointer.x) / 2, y - pointer.y) < radius * 0.6;
+            glowLine += near ? stroke(x - pointer!.x, y - pointer!.y) : level > 0.45 ? "=" : original;
+          } else {
+            heat[y][x] = 0;
+            baseLine += original;
+            glowLine += " ";
+          }
+        }
+        baseLines.push(baseLine);
+        glowLines.push(glowLine);
+      }
+      base.textContent = baseLines.join("\n");
+      glow.textContent = glowLines.join("\n");
+      if (active || pointer) frame = requestAnimationFrame(render);
+    };
+
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(render);
+    };
+
+    root.addEventListener("pointermove", (event) => {
+      const { box, w, h } = cellSize();
+      pointer = { x: (event.clientX - box.left) / w, y: (event.clientY - box.top) / h };
+      schedule();
+    });
+    root.addEventListener("pointerleave", () => {
+      pointer = null;
+      schedule();
+    });
+  }
+</script>

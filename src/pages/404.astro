@@ -1,0 +1,31 @@
+---
+import "../styles/global.css";
+import PageHead from "../components/page-head.astro";
+import SiteFooter from "../components/site-footer.astro";
+import { SiteHeader } from "../components/site-header";
+import { siteCopy as t } from "../lib/copy";
+
+const copy = t.notFound;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <PageHead path="/404" title={`${copy.title} — Nora`} description={copy.description} robots="noindex" />
+  </head>
+  <body class="n-page">
+    <SiteHeader copy={t.header} currentPath="/404" client:load />
+    <main id="main" class="n-wrap flex min-h-[70vh] flex-col justify-center py-24">
+      <p class="n-eyebrow"><b>404</b> / not found</p>
+      <pre class="mt-6 select-none text-[0.8rem] leading-[1.2] text-[var(--muted-foreground)]" aria-hidden="true">$ open {Astro.url.pathname}
+<span class="text-[var(--accent-ink)]">nora: no such page</span></pre>
+      <h1 class="n-h1 mt-8">{copy.title}</h1>
+      <p class="n-lede mt-4">{copy.description}</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="/" class="n-btn n-btn--ink">← {copy.home}</a>
+        <a href="/docs/" class="n-btn n-btn--line">{copy.docs}</a>
+      </div>
+    </main>
+    <SiteFooter copy={t.footer} />
+  </body>
+</html>

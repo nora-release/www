@@ -1,0 +1,38 @@
+---
+/* "NORA" set on a 5×5 pixel grid; each lit cell is a square with a hairline gap. */
+interface Props {
+  cell?: number;
+  class?: string;
+}
+
+const { cell = 14, class: className } = Astro.props;
+const glyphs: Record<string, string[]> = {
+  N: ["#...#", "##..#", "#.#.#", "#..##", "#...#"],
+  O: ["#####", "#...#", "#...#", "#...#", "#####"],
+  R: ["####.", "#...#", "####.", "#..#.", "#...#"],
+  A: ["#####", "#...#", "#####", "#...#", "#...#"],
+};
+const letters = ["N", "O", "R", "A"];
+const letterGap = 1;
+const columns = letters.length * 5 + (letters.length - 1) * letterGap;
+const cells = letters.flatMap((letter, index) =>
+  glyphs[letter].flatMap((row, y) =>
+    [...row].flatMap((pixel, x) => (pixel === "#" ? [{ x: index * (5 + letterGap) + x, y }] : [])),
+  ),
+);
+---
+
+<svg
+  class={className}
+  viewBox={`0 0 ${columns * cell} ${5 * cell}`}
+  width={columns * cell}
+  height={5 * cell}
+  role="img"
+  aria-label="Nora"
+>
+  {
+    cells.map(({ x, y }) => (
+      <rect x={x * cell + 0.5} y={y * cell + 0.5} width={cell - 1} height={cell - 1} fill="currentColor" />
+    ))
+  }
+</svg>

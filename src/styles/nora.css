@@ -1,0 +1,397 @@
+/*
+ * Nora's site language: a terminal page. Monospace text, thin rules,
+ * bracketed buttons, figures in dashed frames, one warm accent.
+ */
+
+@layer components {
+  .n-page {
+    overflow-x: clip;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .n-wrap {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .n-wrap {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Two versions of one image; the page shows the one that matches its theme. */
+  .n-when-dark {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .n-when-light {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .n-when-dark {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .n-when-light {
+      display: none;
+    }
+
+    :root:not([data-theme="light"]) .n-when-dark {
+      display: block;
+    }
+  }
+
+  .n-mono {
+    font-family: var(--font-mono);
+  }
+
+  .n-sans {
+    font-family: var(--font-sans);
+  }
+
+  /* "01 / the app" above a heading. */
+  .n-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+  }
+
+  .n-eyebrow b {
+    font-weight: 400;
+    color: var(--accent-ink);
+  }
+
+  .n-h1 {
+    font-family: var(--font-sans);
+    font-size: clamp(1.9rem, 4.2vw, 2.75rem);
+    line-height: 1.22;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  .n-h2 {
+    font-family: var(--font-sans);
+    font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  /* The accent words of a headline. */
+  .n-ink-em {
+    color: var(--accent-ink);
+  }
+
+  .n-lede {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.85;
+    color: var(--muted-foreground);
+    max-width: 36rem;
+  }
+
+  .n-rule {
+    border-top: 1px dashed var(--rule);
+  }
+
+  /* Buttons read as "[ ↓ Download for macOS ]". */
+  .n-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    height: 2.75rem;
+    padding-inline: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    white-space: nowrap;
+  }
+
+  .n-btn::before {
+    content: "[";
+    color: var(--muted-foreground);
+  }
+
+  .n-btn::after {
+    content: "]";
+    color: var(--muted-foreground);
+  }
+
+  .n-btn:hover {
+    border-color: var(--ink);
+  }
+
+  .n-btn--ink {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .n-btn--ink::before,
+  .n-btn--ink::after {
+    color: color-mix(in oklab, var(--paper) 55%, var(--ink));
+  }
+
+  .n-btn--ink:hover {
+    background: var(--accent-ink);
+    border-color: var(--accent-ink);
+    color: var(--accent-foreground);
+  }
+
+  .n-btn--line {
+    background: transparent;
+  }
+
+  .n-btn .n-btn-meta {
+    font-size: 0.72rem;
+    opacity: 0.65;
+  }
+
+  /*
+   * A figure: a dashed frame with "+" at the corners, a dotted field inside
+   * and a caption on the top edge, "[ fig.01 nora — mac ]".
+   */
+  .n-fig {
+    position: relative;
+    border: 1px dashed var(--rule);
+    padding: clamp(1rem, 3vw, 2.5rem);
+    background-image: radial-gradient(var(--rule) 1px, transparent 1.2px);
+    background-size: 14px 14px;
+  }
+
+  .n-fig::before,
+  .n-fig::after,
+  .n-fig > .n-fig-corner::before,
+  .n-fig > .n-fig-corner::after {
+    position: absolute;
+    font-size: 0.8rem;
+    line-height: 1;
+    color: var(--muted-foreground);
+    content: "+";
+  }
+
+  .n-fig::before {
+    top: -0.45rem;
+    left: -0.3rem;
+  }
+
+  .n-fig::after {
+    top: -0.45rem;
+    right: -0.3rem;
+  }
+
+  .n-fig > .n-fig-corner::before {
+    bottom: -0.4rem;
+    left: -0.3rem;
+  }
+
+  .n-fig > .n-fig-corner::after {
+    bottom: -0.4rem;
+    right: -0.3rem;
+  }
+
+  .n-fig-label {
+    position: absolute;
+    top: -0.7rem;
+    left: 1.25rem;
+    padding-inline: 0.4rem;
+    font-size: 0.8rem;
+    background: var(--paper);
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  .n-fig-label b {
+    font-weight: 400;
+    color: var(--accent-ink);
+  }
+
+  /* A drawn Mac window inside a figure. */
+  .n-window {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    background: var(--card);
+    font-family: var(--font-sans);
+    box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.45);
+  }
+
+  /* A terminal card. */
+  .n-term {
+    border: 1px solid var(--rule);
+    background: var(--card);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.75;
+  }
+
+  .n-term-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+  }
+
+  .n-term-bar i {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 999px;
+    background: var(--rule);
+    display: inline-block;
+  }
+
+  .n-term-body {
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+  }
+
+  .n-term-line {
+    white-space: pre;
+  }
+
+  .n-term-prompt {
+    color: var(--accent-ink);
+  }
+
+  .n-term-dim {
+    color: var(--muted-foreground);
+  }
+
+  /* Card grids share one set of thin rules. */
+  .n-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .n-cell {
+    padding: 1.5rem 1.4rem 1.7rem;
+    background: var(--paper);
+    transition: background 160ms ease;
+  }
+
+  .n-cell:hover {
+    background: var(--card);
+  }
+
+  .n-cell-num {
+    font-size: 0.78rem;
+    color: var(--accent-ink);
+  }
+
+  .n-cell-glyph {
+    font-size: 0.85rem;
+    color: var(--accent-ink);
+  }
+
+  .n-cell h3 {
+    margin-top: 0.9rem;
+    font-family: var(--font-sans);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .n-cell p {
+    margin-top: 0.5rem;
+    font-size: 0.84rem;
+    line-height: 1.75;
+    color: var(--muted-foreground);
+  }
+
+  .n-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.9rem;
+  }
+
+  .n-chip {
+    font-size: 0.72rem;
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+  }
+
+  /* The download list: one row per platform, like a directory listing. */
+  .n-dl-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border-bottom: 1px dashed var(--rule);
+  }
+
+  .n-dl-row:last-child {
+    border-bottom: 0;
+  }
+
+  .n-badge {
+    font-size: 0.68rem;
+    color: var(--accent-ink);
+  }
+
+  .n-link {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    text-decoration-color: var(--rule);
+    transition: text-decoration-color 120ms ease, color 120ms ease;
+  }
+
+  .n-link:hover {
+    color: var(--ink);
+    text-decoration-color: var(--accent-ink);
+  }
+
+  /* FAQ entries open and close with <details>. */
+  .n-faq details {
+    border-bottom: 1px dashed var(--rule);
+  }
+
+  .n-faq summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    gap: 0.9rem;
+    padding: 1.15rem 0;
+    font-size: 0.95rem;
+  }
+
+  .n-faq summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .n-faq summary::before {
+    content: "+";
+    color: var(--accent-ink);
+  }
+
+  .n-faq details[open] summary::before {
+    content: "−";
+  }
+
+  .n-faq details p {
+    padding: 0 0 1.25rem 1.6rem;
+    font-size: 0.86rem;
+    color: var(--muted-foreground);
+    line-height: 1.85;
+    max-width: 46rem;
+  }
+}

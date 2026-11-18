@@ -19,3 +19,7 @@ npm-debug.log*
 .nitro/
 .cache/
 .data/
+
+# VitePress output, built into the site under /docs/
+public/docs/
+docs/.vitepress/cache/

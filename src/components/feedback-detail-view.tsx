@@ -16,9 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { authClient } from "../lib/auth-client";
-import type { Locale } from "../lib/i18n";
-import { localizedPath } from "../lib/i18n";
-import type { FeedbackPageCopy } from "../lib/translations";
+import type { FeedbackPageCopy } from "../lib/copy";
 import { MarkdownContent } from "./markdown-content";
 
 type FeedbackCategory = "feature" | "bug";
@@ -90,15 +88,10 @@ type SessionUser = {
 type FeedbackDetailViewProps = {
   copy: FeedbackPageCopy;
   feedbackId: string;
-  locale: Locale;
 };
 
-function getDisplayLocale(locale: Locale) {
-  return locale === "zh-Hans" ? "zh-CN" : locale;
-}
-
-function formatDate(value: string, locale: Locale) {
-  return new Intl.DateTimeFormat(getDisplayLocale(locale), {
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
@@ -119,7 +112,7 @@ function formatFileSize(sizeBytes: number) {
   return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function FeedbackDetailView({ copy, feedbackId, locale }: FeedbackDetailViewProps) {
+export function FeedbackDetailView({ copy, feedbackId }: FeedbackDetailViewProps) {
   const [commentBody, setCommentBody] = useState("");
   const [detail, setDetail] = useState<FeedbackDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -293,9 +286,9 @@ export function FeedbackDetailView({ copy, feedbackId, locale }: FeedbackDetailV
   const isVotePending = item ? pendingVoteId === item.id : false;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 pb-24 pt-32 md:px-12">
+    <div className="n-wrap pb-24 pt-12 md:pt-16">
       <a
-        href={localizedPath(locale, "/feedback")}
+        href={"/feedback"}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -324,7 +317,7 @@ export function FeedbackDetailView({ copy, feedbackId, locale }: FeedbackDetailV
                 <span className="inline-flex h-7 items-center border border-border/70 px-2 text-xs text-muted-foreground">
                   {copy.status[item.status]}
                 </span>
-                <span className="text-xs text-muted-foreground">{formatDate(item.updatedAt, locale)}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(item.updatedAt)}</span>
               </div>
 
               <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
@@ -429,7 +422,7 @@ export function FeedbackDetailView({ copy, feedbackId, locale }: FeedbackDetailV
                             {getAuthorName(message.author)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            @{message.author.login} · {formatDate(message.createdAt, locale)}
+                            @{message.author.login} · {formatDate(message.createdAt)}
                           </p>
                         </div>
                       </div>
