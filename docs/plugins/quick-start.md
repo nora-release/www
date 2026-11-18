@@ -76,7 +76,15 @@ esac
 chmod +x safe-git/hooks/check-push.sh
 ```
 
-## Step 5: Try it
+## Step 5: Check it
+
+```sh
+nora plugin validate ./safe-git
+```
+
+It prints the plugin's name, version and what it contains, or what is wrong.
+
+## Step 6: Try it
 
 Load the folder for one run without installing it:
 
@@ -94,6 +102,7 @@ It now works in the app too; the approval shows up as a card in the conversation
 
 ## Next steps
 
+- [Examples](./examples.md): six complete plugins to copy.
 - [Plugin layout](./layout.md): agents, commands and MCP servers.
 - [Hooks](./hooks.md): every event and decision.
 - [Publishing](./publishing.md): share it.

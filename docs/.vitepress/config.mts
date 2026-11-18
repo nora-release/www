@@ -107,6 +107,7 @@ export default defineConfig({
           text: "Building plugins",
           items: [
             { text: "Quick start", link: "/plugins/quick-start" },
+            { text: "Examples", link: "/plugins/examples" },
             { text: "Plugin layout", link: "/plugins/layout" },
             { text: "Hooks", link: "/plugins/hooks" },
             { text: "Manifest reference", link: "/plugins/manifest" },

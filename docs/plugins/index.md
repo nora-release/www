@@ -25,6 +25,7 @@ Nora reads the Claude Code, Codex and Grok plugin formats directly. A plugin bui
 ## For developers
 
 - [Quick start](./quick-start.md): a working plugin in five minutes.
+- [Examples](./examples.md): six complete plugins to copy.
 - [Plugin layout](./layout.md): every folder and file a plugin can have.
 - [Hooks](./hooks.md): run code before and after tool calls and turns.
 - [Manifest reference](./manifest.md): `nora-plugin.json` for tool and provider plugins.

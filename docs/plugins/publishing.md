@@ -38,6 +38,7 @@ nora plugins add safe-git
 
 ## Checklist
 
+- `nora plugin validate` passes.
 - A `README.md` that says what the plugin does and what it runs.
 - A clear `description` in the manifest.
 - Only the `permissions` you need, listed honestly.

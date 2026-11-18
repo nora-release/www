@@ -25,6 +25,7 @@ nora plugins enable <name>
 nora plugins disable <name>
 nora plugins remove <name>
 nora plugins reload
+nora plugin validate ./my-plugin    # check a plugin folder before installing
 ```
 
 ## Plugin sources
