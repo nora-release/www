@@ -32,7 +32,7 @@ nora plugin validate ./my-plugin    # check a plugin folder before installing
 
 | Source | Example |
 | --- | --- |
-| A name from a marketplace you added | `pdfs`, or `pdfs@nora-plugins` when two marketplaces share a name |
+| A name from a marketplace you added | `nora.pdfs`, or `nora.pdfs@nora` when two marketplaces share a name |
 | A GitHub repository | `owner/repo`, `owner/repo@v1.2.0`, `owner/repo#plugins/pdfs` |
 | A Git URL | `https://git.example.com/team/plugin.git` |
 | A local folder | `./my-plugin`, `~/plugins/my-plugin` |
@@ -41,8 +41,11 @@ nora plugin validate ./my-plugin    # check a plugin folder before installing
 
 A marketplace is a catalog of plugins in a Git repository.
 
+Nora's official plugins are in the `nora-release/plugins` marketplace, named like `nora.pdfs`:
+
 ```sh
 nora plugins marketplace add nora-release/plugins
+nora plugins add nora.pdfs
 nora plugins marketplace list
 nora plugins marketplace update
 nora plugins marketplace remove <source>
