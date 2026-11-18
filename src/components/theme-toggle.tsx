@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 
 type Theme = "light" | "dark";
 
-const storageKey = "noraTheme";
+/** The key VitePress uses, so the choice carries over to the docs under /docs/. */
+const storageKey = "vitepress-theme-appearance";
 
 function currentTheme(): Theme {
   const chosen = document.documentElement.dataset.theme;

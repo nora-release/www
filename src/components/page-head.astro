@@ -18,9 +18,10 @@ const { description, path, robots = "index, follow", structuredData, title } = A
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0d0c" />
 <meta name="color-scheme" content="light dark" />
 <script is:inline>
-  // Applies the reader's chosen theme before the first paint.
+  // Applies the reader's chosen theme before the first paint. The key is the
+  // one VitePress uses, so the site and the docs share one choice.
   try {
-    const theme = localStorage.getItem("noraTheme");
+    const theme = localStorage.getItem("vitepress-theme-appearance");
     if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
   } catch {}
 </script>

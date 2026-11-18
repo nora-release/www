@@ -34,7 +34,7 @@ export default defineConfig({
       { text: "Plugins", link: "/plugins/", activeMatch: "/plugins/" },
       { text: "Settings", link: "/settings/", activeMatch: "/settings/" },
       { text: "CLI", link: "/cli/", activeMatch: "/cli/" },
-      { text: "Home", link: `${site}/` },
+      { text: "Home", link: `${site}/`, target: "_self", rel: "", noIcon: true },
     ],
     socialLinks: [{ icon: "github", link: "https://github.com/nora-release/release" }],
     sidebar: {
