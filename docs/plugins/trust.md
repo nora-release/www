@@ -14,7 +14,7 @@ Trusting a plugin means letting it do anything you could do on this Mac. Install
 | --- | --- |
 | Only skills, prompts and settings | Works as soon as it is installed. |
 | Runs a program | Asks you to trust it before its code runs the first time. |
-| Native app plugin | Must be code-signed and notarized. |
+| Native app plugin | Runs in the App Sandbox. From Nora's official catalog it is checked against the reviewed checksum; from anywhere else it must be signed with a Developer ID and notarized by Apple. |
 
 Trust is tied to the exact content you approved. If an update turns a plugin that only had skills into one that runs code, Nora asks again.
 
